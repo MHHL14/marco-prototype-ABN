@@ -138,6 +138,7 @@ function MatchBadge({ match }) {
   if (match === 'exact') return <span style={styles.badge(`${COLORS.green}18`, COLORS.green)}>✅ Matched</span>;
   if (match === 'review') return <span style={styles.badge(`${COLORS.yellow}30`, '#92750a')}>🟡 Review</span>;
   if (match === 'new') return <span style={styles.badge(`${COLORS.red}18`, COLORS.red)}>🔴 New</span>;
+  if (match === 'unmapped') return <span style={styles.badge(`${COLORS.mediumGrey}20`, COLORS.mediumGrey)}>⬜ No Match</span>;
   return null;
 }
 
@@ -353,13 +354,14 @@ function ConfidenceBadge({ confidence }) {
 // --- RACI Ownership Bar ---
 const STEP_RACI = {
   1: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Grid Lead', phase: 'Intake' },
-  2: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
-  3: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
-  4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
-  5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Data Steward', phase: 'Execution' },
-  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
-  7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
-  8: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Closing' },
+  2: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Data Product Owner', phase: 'Intake' },
+  3: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
+  4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
+  5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
+  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Data Steward', phase: 'Execution' },
+  7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
+  8: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
+  9: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Closing' },
 };
 
 function OwnershipBar({ step, editable, values, onChange }) {
@@ -708,13 +710,14 @@ function LoginPage({ onLogin }) {
 function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPersona, selectedUC, setSelectedUC, isMobile, sidebarOpen, setSidebarOpen }) {
   const steps = [
     { n: 1, label: 'Business Needs', icon: <ClipboardList size={16} /> },
-    { n: 2, label: 'Requirements & FRIM', icon: <Sparkles size={16} /> },
-    { n: 3, label: 'BLDM Mapping', icon: <Layers size={16} /> },
-    { n: 4, label: 'Cross-Domain Sourcing', icon: <GitBranch size={16} /> },
-    { n: 5, label: 'PDM & DDS', icon: <Database size={16} /> },
-    { n: 6, label: 'Gap Analysis', icon: <BarChart3 size={16} /> },
-    { n: 7, label: 'DQ Monitoring', icon: <Shield size={16} /> },
-    { n: 8, label: 'Closing', icon: <CheckCircle2 size={16} /> },
+    { n: 2, label: 'Business Requirements', icon: <Sparkles size={16} /> },
+    { n: 3, label: 'FRIM Mapping', icon: <BookOpen size={16} /> },
+    { n: 4, label: 'BLDM Mapping', icon: <Layers size={16} /> },
+    { n: 5, label: 'Cross-Domain Sourcing', icon: <GitBranch size={16} /> },
+    { n: 6, label: 'PDM & DDS', icon: <Database size={16} /> },
+    { n: 7, label: 'Gap Analysis', icon: <BarChart3 size={16} /> },
+    { n: 8, label: 'DQ Monitoring', icon: <Shield size={16} /> },
+    { n: 9, label: 'Closing', icon: <CheckCircle2 size={16} /> },
   ];
 
   const persona = PERSONAS.find(p => p.id === selectedPersona);
@@ -1324,7 +1327,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <Download size={14} /> Export to Excel
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Requirements & FRIM <ArrowRight size={16} />
+          Next: Business Requirements <ArrowRight size={16} />
         </button>
       </div>
       </>
@@ -1334,7 +1337,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
 }
 
 // ============================================================
-// Step 2 — Business Need & Data Requirements
+// Step 2 — Business Requirements
 // ============================================================
 function Step2BusinessNeed({ selectedUC, onNext }) {
   const [businessNeed, setBusinessNeed] = useState(BUSINESS_NEED_EXAMPLES[selectedUC] || '');
@@ -1471,7 +1474,7 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
   return (
     <div>
       <SectionHeader sub="Describe your data need in business terms or import existing requirements. AI will derive structured data requirements with definitions." tip={STEP_TOOLTIPS[2].main}>
-        Step 2 — Requirements & FRIM Mapping
+        Step 2 — Business Requirements
       </SectionHeader>
       <OwnershipBar step={2} />
 
@@ -1783,11 +1786,9 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
             <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
               <Download size={14} /> Export to Excel
             </button>
-            {onNext && (
-              <button style={styles.btnPrimary} onClick={onNext}>
-                Proceed to FRIM Matching <ArrowRight size={16} />
-              </button>
-            )}
+            <button style={styles.btnPrimary} onClick={onNext}>
+              Next: FRIM Mapping <ArrowRight size={16} />
+            </button>
           </div>
         </>
       )}
@@ -1834,13 +1835,16 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
 
   const filtered = useMemo(() => {
     return reqs.filter(r => {
-      if (search && !r.frim.toLowerCase().includes(search.toLowerCase()) && !r.entity.toLowerCase().includes(search.toLowerCase())) return false;
+      const reqName = r.businessReq || r.frim || '';
+      const frimName = r.frim || '';
+      if (search && !reqName.toLowerCase().includes(search.toLowerCase()) && !frimName.toLowerCase().includes(search.toLowerCase()) && !r.entity.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterMatch !== 'all' && r.match !== filterMatch) return false;
       if (filterCde === 'cde' && !r.cde) return false;
       if (filterCde === 'non-cde' && r.cde) return false;
       if (kpiFilter === 'exact' && r.match !== 'exact') return false;
       if (kpiFilter === 'review' && r.match !== 'review') return false;
       if (kpiFilter === 'new' && r.match !== 'new') return false;
+      if (kpiFilter === 'unmapped' && r.match !== 'unmapped') return false;
       if (kpiFilter === 'cde' && !r.cde) return false;
       return true;
     });
@@ -1868,13 +1872,14 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
     setEditingFrim(null);
   };
 
-  const getFrimTerm = (r) => frimOverrides[r.id] || r.frim;
+  const getFrimTerm = (r) => frimOverrides[r.id] || r.frim || '';
 
   const handleExport = () => {
     const data = reqs.map(r => ({
       'ID': r.id,
-      'FRIM Term': getFrimTerm(r),
-      'Business Req': r.regRef,
+      'Business Requirement': r.businessReq || r.frim,
+      'FRIM Term': r.match === 'unmapped' ? '— No Match —' : getFrimTerm(r),
+      'Reg Reference': r.regRef,
       'Match Status': r.match,
       'CDE': r.cde ? 'Yes' : 'No',
       'Definition': r.def,
@@ -1886,19 +1891,20 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[3]?.main || "Map business requirements to FRIM Lexicon terms."} tip={STEP_TOOLTIPS[3]?.frim || "Each data requirement is matched against the FRIM Lexicon. Green = exact match, Yellow = needs review, Red = new term needed."}>
-        {stepLabel ? `Step ${stepLabel}` : 'Step 2'} — FRIM Lexicon Mapping
+        Step {stepLabel || '3'} — FRIM Lexicon Mapping
       </SectionHeader>
-      <OwnershipBar step={2} />
+      <OwnershipBar step={3} />
 
       <div style={{ ...styles.badge(`${COLORS.petrol}15`, COLORS.petrol), marginBottom: 16, padding: '8px 16px', fontSize: 13 }}>
-        🤖 AI-assisted — {stats.total} requirements mapped to FRIM terms
+        🤖 AI-assisted — {stats.total} business requirements, {stats.total - stats.unmapped} mapped to FRIM terms, {stats.unmapped} unmapped
       </div>
 
       {/* Clickable KPI Cards */}
-      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12, marginBottom: 16 }}>
         <KpiCard label="Exact Match" value={stats.exact} color={COLORS.green} active={kpiFilter === 'exact'} onClick={() => handleKpiClick('exact')} />
         <KpiCard label="Review" value={stats.review} color={COLORS.yellow} active={kpiFilter === 'review'} onClick={() => handleKpiClick('review')} />
         <KpiCard label="New Terms" value={stats.newR} color={COLORS.red} active={kpiFilter === 'new'} onClick={() => handleKpiClick('new')} />
+        <KpiCard label="No Match" value={stats.unmapped} color={COLORS.mediumGrey} active={kpiFilter === 'unmapped'} onClick={() => handleKpiClick('unmapped')} />
         <KpiCard label="CDEs" value={stats.cdes} color={COLORS.yellow} active={kpiFilter === 'cde'} onClick={() => handleKpiClick('cde')} />
         <KpiCard label="Coverage" value={`${stats.coverage}%`} color={COLORS.green} />
       </div>
@@ -1907,13 +1913,14 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
       <div style={{ ...styles.card, padding: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={14} color={COLORS.mediumGrey} style={{ position: 'absolute', left: 12, top: 13 }} />
-          <input style={{ ...styles.input, paddingLeft: 34 }} placeholder="Search FRIM terms..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
+          <input style={{ ...styles.input, paddingLeft: 34 }} placeholder="Search requirements or FRIM terms..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
         </div>
         <select style={{ ...styles.input, width: 'auto', minWidth: 130 }} value={filterMatch} onChange={e => { setFilterMatch(e.target.value); setPage(0); }}>
           <option value="all">All Statuses</option>
           <option value="exact">Matched</option>
           <option value="review">Review</option>
           <option value="new">New</option>
+          <option value="unmapped">No Match</option>
         </select>
         <select style={{ ...styles.input, width: 'auto', minWidth: 120 }} value={filterCde} onChange={e => { setFilterCde(e.target.value); setPage(0); }}>
           <option value="all">All CDE</option>
@@ -1927,15 +1934,16 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
         )}
       </div>
 
-      {/* FRIM Mapping Table — no BLDM, no Source, no DQ */}
+      {/* FRIM Mapping Table — Business Requirement → FRIM Term */}
       <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th style={styles.th}>#</th>
-                <th style={styles.th}>FRIM Lexicon Term</th>
                 <th style={styles.th}>Business Requirement</th>
+                <th style={styles.th}>FRIM Lexicon Term</th>
+                <th style={styles.th}>Reg Reference</th>
                 <th style={styles.th}>Match</th>
                 <th style={styles.th}>CDE</th>
                 {birdEnabled && <th style={styles.th}>BIRD LDM</th>}
@@ -1944,41 +1952,49 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
             </thead>
             <tbody>
               {paged.map(r => {
-                const expr = reqExpressionMap[r.id];
+                const expr = r.match !== 'unmapped' ? reqExpressionMap[r.id] : null;
+                const reqLabel = r.businessReq || r.frim;
                 return (
                 <React.Fragment key={r.id}>
-                  <tr style={{ background: expandedRow === r.id ? `${COLORS.green}06` : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }} onClick={() => setExpandedRow(expandedRow === r.id ? null : r.id)}>
+                  <tr style={{ background: expandedRow === r.id ? `${COLORS.green}06` : r.match === 'unmapped' ? `${COLORS.mediumGrey}06` : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }} onClick={() => setExpandedRow(expandedRow === r.id ? null : r.id)}>
                     <td style={styles.td}>{r.id}</td>
+                    <td style={{ ...styles.td, fontWeight: 600, fontSize: 13, color: COLORS.darkGreen }}>
+                      {reqLabel}
+                    </td>
                     <td style={styles.td}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        {editingFrim === r.id ? (
-                          <input
-                            autoFocus
-                            defaultValue={getFrimTerm(r)}
-                            style={{ ...styles.input, padding: '4px 8px', fontSize: 13, width: '100%' }}
-                            onClick={e => e.stopPropagation()}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handleFrimEdit(r.id, e.target.value);
-                              if (e.key === 'Escape') setEditingFrim(null);
-                            }}
-                            onBlur={e => handleFrimEdit(r.id, e.target.value)}
-                          />
-                        ) : (
-                          <>
-                            <span style={{ ...styles.frimTerm, cursor: 'text' }} onDoubleClick={(e) => { e.stopPropagation(); setEditingFrim(r.id); }} title="Double-click to edit">
-                              {getFrimTerm(r)} {frimOverrides[r.id] && <Pencil size={10} style={{ marginLeft: 4, opacity: 0.5 }} />}
-                            </span>
-                            {expr && (
-                              <span
-                                title={`Part of Element Expression: ${expr.label}\n${expr.formula}`}
-                                style={{ ...styles.badge(`${COLORS.petrol}15`, COLORS.petrol), fontSize: 9, padding: '2px 6px', cursor: 'help', whiteSpace: 'nowrap' }}
-                              >
-                                📐 {expr.label}
+                      {r.match === 'unmapped' ? (
+                        <span style={{ color: COLORS.mediumGrey, fontSize: 12, fontStyle: 'italic' }}>— No FRIM match —</span>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          {editingFrim === r.id ? (
+                            <input
+                              autoFocus
+                              defaultValue={getFrimTerm(r)}
+                              style={{ ...styles.input, padding: '4px 8px', fontSize: 13, width: '100%' }}
+                              onClick={e => e.stopPropagation()}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleFrimEdit(r.id, e.target.value);
+                                if (e.key === 'Escape') setEditingFrim(null);
+                              }}
+                              onBlur={e => handleFrimEdit(r.id, e.target.value)}
+                            />
+                          ) : (
+                            <>
+                              <span style={{ ...styles.frimTerm, cursor: 'text' }} onDoubleClick={(e) => { e.stopPropagation(); setEditingFrim(r.id); }} title="Double-click to edit">
+                                {getFrimTerm(r)} {frimOverrides[r.id] && <Pencil size={10} style={{ marginLeft: 4, opacity: 0.5 }} />}
                               </span>
-                            )}
-                          </>
-                        )}
-                      </div>
+                              {expr && (
+                                <span
+                                  title={`Part of Element Expression: ${expr.label}\n${expr.formula}`}
+                                  style={{ ...styles.badge(`${COLORS.petrol}15`, COLORS.petrol), fontSize: 9, padding: '2px 6px', cursor: 'help', whiteSpace: 'nowrap' }}
+                                >
+                                  📐 {expr.label}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{r.regRef}</td>
                     <td style={styles.td}><MatchBadge match={r.match} /></td>
@@ -1992,16 +2008,28 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
                   </tr>
                   {expandedRow === r.id && (
                     <tr>
-                      <td colSpan={birdEnabled ? 7 : 6} style={{ padding: '0 16px 16px', background: `${COLORS.green}04` }}>
+                      <td colSpan={birdEnabled ? 8 : 7} style={{ padding: '0 16px 16px', background: `${COLORS.green}04` }}>
                         <div style={{ display: 'grid', gridTemplateColumns: birdEnabled && r.birdEntity ? '1fr 1fr' : '1fr', gap: 16, paddingTop: 8 }}>
-                          {/* FRIM Definition */}
-                          <div style={{ background: '#fff', borderRadius: 10, padding: 16, border: `1px solid ${COLORS.lightGrey}30` }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 8, ...styles.fontSans }}>
-                              {r.isNew ? '🤖 AI-Suggested' : '📖'} FRIM Lexicon Definition
+                          {/* Requirement Definition / FRIM Definition */}
+                          <div style={{ background: '#fff', borderRadius: 10, padding: 16, border: `1px solid ${r.match === 'unmapped' ? COLORS.mediumGrey : COLORS.lightGrey}30` }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: r.match === 'unmapped' ? COLORS.mediumGrey : COLORS.darkGreen, marginBottom: 8, ...styles.fontSans }}>
+                              {r.match === 'unmapped' ? '⬜ Business Requirement (No FRIM Match)' : r.isNew ? '🤖 AI-Suggested FRIM Definition' : '📖 FRIM Lexicon Definition'}
                             </div>
-                            <div style={{ ...styles.fontSerif, fontStyle: 'italic', fontSize: 14, color: COLORS.darkGreen, lineHeight: 1.6, padding: 12, background: `${COLORS.lightGrey}0a`, borderRadius: 8, borderLeft: `3px solid ${COLORS.green}` }}>
+                            <div style={{ ...styles.fontSerif, fontStyle: 'italic', fontSize: 14, color: COLORS.darkGreen, lineHeight: 1.6, padding: 12, background: `${COLORS.lightGrey}0a`, borderRadius: 8, borderLeft: `3px solid ${r.match === 'unmapped' ? COLORS.mediumGrey : COLORS.green}` }}>
                               "{r.def}"
                             </div>
+                            {r.match === 'unmapped' && (
+                              <div style={{ marginTop: 12, padding: 12, background: `${COLORS.yellow}08`, borderRadius: 8, border: `1px solid ${COLORS.yellow}20` }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#92750a', marginBottom: 4 }}>Action Required</div>
+                                <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.5 }}>
+                                  This business requirement has no matching FRIM Lexicon term. A new term must be proposed and added to the FRIM Lexicon through the governance process before it can be used in the data model.
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                  <button style={{ ...styles.btnPrimary, padding: '6px 16px', fontSize: 12 }}>Propose FRIM Term</button>
+                                  <button style={{ ...styles.btnSecondary, padding: '6px 16px', fontSize: 12 }}>Map to Existing</button>
+                                </div>
+                              </div>
+                            )}
                             {r.isNew && <FrimCompliancePanel def={r.def} term={r.frim} />}
                             {r.isNew && (
                               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -2131,7 +2159,7 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
         )}
       </div>
 
-      <ReviewPanel step={2} />
+      <ReviewPanel step={3} />
     </div>
   );
 }
@@ -3125,9 +3153,9 @@ function Step7DQMonitoring({ selectedUC, onNext }) {
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Monitor data quality against thresholds."} tip={STEP_TOOLTIPS[7]?.dqTable || "DQ monitoring dashboard."}>
-        Step 7 — DQ Monitoring & AI Checks
+        Step 8 — DQ Monitoring & AI Checks
       </SectionHeader>
-      <OwnershipBar step={7} />
+      <OwnershipBar step={8} />
 
       {/* KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -3292,13 +3320,13 @@ function Step7DQMonitoring({ selectedUC, onNext }) {
         </button>
       </div>
 
-      <ReviewPanel step={7} />
+      <ReviewPanel step={8} />
     </div>
   );
 }
 
 // ============================================================
-// Step 8 — Closing (simplified from Handoff)
+// Step 9 — Closing (simplified from Handoff)
 // ============================================================
 function Step8Closing({ selectedUC }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -3312,11 +3340,12 @@ function Step8Closing({ selectedUC }) {
 
   const processSteps = [
     { label: 'Business Needs', done: true },
-    { label: 'Req & FRIM', done: true },
+    { label: 'Requirements', done: true },
+    { label: 'FRIM', done: true },
     { label: 'BLDM', done: true },
     { label: 'Sourcing', done: true },
     { label: 'PDM & DDS', done: true },
-    { label: 'Gap Analysis', done: true },
+    { label: 'Gap', done: true },
     { label: 'DQ Monitor', done: true },
     { label: 'Closing', done: true },
   ];
@@ -3335,9 +3364,9 @@ function Step8Closing({ selectedUC }) {
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[8]?.main || "Closing overview with key findings and exports."} tip="Final closing step with summary of all process findings.">
-        Step 8 — Closing
+        Step 9 — Closing
       </SectionHeader>
-      <OwnershipBar step={8} />
+      <OwnershipBar step={9} />
 
       {/* Process Status */}
       <div style={{ ...styles.card }}>
@@ -3425,7 +3454,7 @@ function Step8Closing({ selectedUC }) {
         </div>
       </div>
 
-      <ReviewPanel step={8} />
+      <ReviewPanel step={9} />
     </div>
   );
 }
@@ -3663,7 +3692,7 @@ function Step8Handoff({ selectedUC }) {
 // ============================================================
 function PortfolioView({ setActiveStep, setSelectedUC }) {
   const statusColors = { 'In Progress': COLORS.yellow, 'Completed': COLORS.green, 'Not Started': COLORS.mediumGrey, 'Blocked': COLORS.red };
-  const stepLabels = ['Business', 'Req & FRIM', 'BLDM', 'Sourcing', 'PDM&DDS', 'Gap', 'DQ', 'Closing'];
+  const stepLabels = ['Business', 'Reqs', 'FRIM', 'BLDM', 'Sourcing', 'PDM&DDS', 'Gap', 'DQ', 'Closing'];
 
   const ucPortfolio = useMemo(() => {
     return USE_CASE_LIST.map(uc => {
@@ -3671,8 +3700,8 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
       const stats = getStats(reqs);
       const persona = PERSONAS.find(p => p.id === uc.personaId);
       // Simulate progress — use coverage & match stats to determine step completion
-      const progress = Math.min(8, Math.max(1, Math.round(stats.coverage / 14) + 1));
-      const status = progress >= 8 ? 'Completed' : progress >= 4 ? 'In Progress' : progress >= 2 ? 'In Progress' : 'Not Started';
+      const progress = Math.min(9, Math.max(1, Math.round(stats.coverage / 12) + 1));
+      const status = progress >= 9 ? 'Completed' : progress >= 4 ? 'In Progress' : progress >= 2 ? 'In Progress' : 'Not Started';
       return { ...uc, reqs: reqs.length, stats, persona, progress, status, coverage: stats.coverage };
     });
   }, []);
@@ -3806,7 +3835,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
                         <span style={{ fontWeight: 600 }}>{uc.label}</span>
                       </td>
                       <td style={{ ...styles.td, textAlign: 'center' }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.petrol }}>{uc.progress}/8</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.petrol }}>{uc.progress}/9</span>
                       </td>
                       <td style={{ ...styles.td, textAlign: 'center' }}>
                         <span style={{ ...styles.badge(`${statusColors[uc.status]}20`, uc.status === 'In Progress' ? '#92750a' : statusColors[uc.status]), fontSize: 10, fontWeight: 700 }}>
@@ -3841,7 +3870,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
           const data = ucPortfolio.map(uc => ({
-            'Use Case': uc.label, 'Persona': uc.persona?.label, 'Status': uc.status, 'Step': `${uc.progress}/8`,
+            'Use Case': uc.label, 'Persona': uc.persona?.label, 'Status': uc.status, 'Step': `${uc.progress}/9`,
             'Requirements': uc.reqs, 'Matched': uc.stats.exact, 'Review': uc.stats.review, 'New': uc.stats.newR,
             'Coverage': `${uc.coverage}%`,
           }));
@@ -3924,19 +3953,14 @@ export default function App() {
               selectedEntities={selectedEntities} setSelectedEntities={setSelectedEntities}
             />
           )}
-          {activeStep === 2 && (
-            <div>
-              <Step2BusinessNeed selectedUC={selectedUC} onNext={null} />
-              <div style={{ marginTop: 24 }} />
-              <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(3)} stepLabel="2" />
-            </div>
-          )}
-          {activeStep === 3 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(4)} stepNum={3} />}
-          {activeStep === 4 && <Step6Origination selectedUC={selectedUC} onNext={() => setActiveStep(5)} stepNum={4} />}
-          {activeStep === 5 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(6)} stepNum={5} />}
-          {activeStep === 6 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(7)} stepNum={6} />}
-          {activeStep === 7 && <Step7DQMonitoring selectedUC={selectedUC} onNext={() => setActiveStep(8)} />}
-          {activeStep === 8 && <Step8Closing selectedUC={selectedUC} />}
+          {activeStep === 2 && <Step2BusinessNeed selectedUC={selectedUC} onNext={() => setActiveStep(3)} />}
+          {activeStep === 3 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(4)} stepLabel="3" />}
+          {activeStep === 4 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(5)} stepNum={4} />}
+          {activeStep === 5 && <Step6Origination selectedUC={selectedUC} onNext={() => setActiveStep(6)} stepNum={5} />}
+          {activeStep === 6 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(7)} stepNum={6} />}
+          {activeStep === 7 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(8)} stepNum={7} />}
+          {activeStep === 8 && <Step7DQMonitoring selectedUC={selectedUC} onNext={() => setActiveStep(9)} />}
+          {activeStep === 9 && <Step8Closing selectedUC={selectedUC} />}
         </div>
       </div>
     </div>

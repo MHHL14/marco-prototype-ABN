@@ -367,6 +367,9 @@ export const REQUIREMENTS = {
     { id: 36, frim: 'Rating Agency', def: 'Institution that has issued the external credit rating.', entity: 'Involved Party', attr: 'rating agency', regRef: 'CRR2 Art. 135', match: 'exact', cde: false, domain: 'Markets' },
     { id: 37, frim: 'Guarantor Identifier', def: 'Unique reference assigned to the party providing a guarantee or unfunded credit protection.', entity: 'Collateral', attr: 'guarantor identifier', regRef: 'CRR2 Art. 203', match: 'new', cde: true, domain: 'Markets', isNew: true },
     { id: 38, frim: 'Guarantor Credit Quality Step', def: 'Regulatory credit quality step assigned to the protection provider based on its external rating.', entity: 'Collateral', attr: 'guarantor credit quality step', regRef: 'CRR2 Art. 136', match: 'new', cde: true, domain: 'Markets', isNew: true },
+    { id: 39, businessReq: 'Climate Risk Transition Score', def: 'A score reflecting the obligor\'s transition risk exposure based on carbon intensity and sector alignment with EU taxonomy.', entity: 'Involved Party', attr: '—', regRef: 'EBA/GL/2020/06', match: 'unmapped', cde: true, domain: 'Consumer', frim: null },
+    { id: 40, businessReq: 'Loan-to-Value Ratio at Origination', def: 'Ratio of the credit facility amount to the appraised value of the underlying real estate collateral at the time of origination.', entity: 'Credit Facility', attr: '—', regRef: 'CRR2 Art. 125(2)', match: 'unmapped', cde: true, domain: 'Credits', frim: null },
+    { id: 41, businessReq: 'Forbearance Concession Date', def: 'The date on which forbearance measures were first applied to the credit facility.', entity: 'Credit Facility', attr: '—', regRef: 'EBA/GL/2017/06', match: 'unmapped', cde: false, domain: 'Credits', frim: null },
   ],
   2: [
     { id: 1, frim: 'Probability of Default', def: 'Estimated likelihood that an obligor will default within a given time horizon.', entity: 'Risk Assessment', attr: 'probability of default', regRef: 'IFRS9 B5.5.4', match: 'exact', cde: true, domain: 'Credits' },
@@ -409,6 +412,8 @@ export const REQUIREMENTS = {
     { id: 38, frim: 'Product Type', def: 'Classification of the financial product associated with the credit facility.', entity: 'Financing Product', attr: 'product type', regRef: 'IFRS9 4.1.1', match: 'exact', cde: false, domain: 'Credits' },
     { id: 39, frim: 'Product Currency', def: 'Currency denomination of the financial product.', entity: 'Financing Product', attr: 'product currency', regRef: 'IFRS9 B6.6.16', match: 'exact', cde: false, domain: 'Credits' },
     { id: 40, frim: 'Reporting Date', def: 'Reference date for which the data is reported.', entity: 'Credit Facility', attr: 'reporting date', regRef: 'IFRS9 5.5.1', match: 'exact', cde: true, domain: 'Credits' },
+    { id: 41, businessReq: 'Model Validation Outcome', def: 'The result of the most recent independent model validation assessment for the ECL model used.', entity: 'Risk Assessment', attr: '—', regRef: 'EBA/GL/2017/16', match: 'unmapped', cde: true, domain: 'Credits', frim: null },
+    { id: 42, businessReq: 'Macro Scenario GDP Growth Rate', def: 'The projected GDP growth rate used in a specific macroeconomic scenario for forward-looking ECL estimation.', entity: 'Risk Assessment', attr: '—', regRef: 'IFRS9 5.5.17(c)', match: 'unmapped', cde: false, domain: 'Credits', frim: null },
   ],
   3: [
     { id: 1, frim: 'Own Funds Amount', def: 'Total amount of own funds held by the institution for regulatory capital purposes.', entity: 'Credit Facility', attr: '(aggregated)', regRef: 'CRR2 Art. 72', match: 'exact', cde: true, domain: 'Credits' },
@@ -1218,6 +1223,7 @@ export const STEP_TOOLTIPS = {
     dashboard: 'Visual DQ dashboard showing scores per dimension and pass/fail distribution across all monitored data elements.',
   },
   8: { main: 'Closing overview with key findings from all process steps. Export complete packages for use case requirements, FRIM additions, BLDM additions, and DQ findings.' },
+  9: { main: 'Closing overview with key findings from all process steps. Export complete packages for use case requirements, FRIM additions, BLDM additions, and DQ findings.' },
 };
 
 // --- Element Expressions (combined FRIM terms per UC) ---
@@ -1444,10 +1450,11 @@ export function getStats(reqs) {
   const exact = reqs.filter(r => r.match === 'exact').length;
   const review = reqs.filter(r => r.match === 'review').length;
   const newR = reqs.filter(r => r.match === 'new').length;
+  const unmapped = reqs.filter(r => r.match === 'unmapped').length;
   const cdes = reqs.filter(r => r.cde).length;
   const newCdes = reqs.filter(r => r.match === 'new' && r.cde).length;
   const birdAligned = reqs.filter(r => r.birdAlign === 'aligned').length;
   const birdPartial = reqs.filter(r => r.birdAlign === 'partial').length;
   const birdTotal = reqs.filter(r => r.birdAlign).length;
-  return { exact, review, newR, cdes, newCdes, total: reqs.length, birdAligned, birdPartial, birdTotal, coverage: Math.round(((exact + review) / reqs.length) * 100) };
+  return { exact, review, newR, unmapped, cdes, newCdes, total: reqs.length, birdAligned, birdPartial, birdTotal, coverage: Math.round(((exact + review) / reqs.length) * 100) };
 }
