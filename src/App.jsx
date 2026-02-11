@@ -17,7 +17,8 @@ import {
   GOVERNANCE_STATUSES, DQ_DIMENSIONS, DQ_AI_SUGGESTIONS, USE_CASE_MATRIX,
   STEP_TOOLTIPS, ELEMENT_EXPRESSIONS, FRIM_MAPPING_RATIONALES, PDM_MAPPING,
   BUSINESS_REQUIREMENTS_TEXT, DQ_REQUIREMENTS_TEXT, DEFINITION_REASONING,
-  AI_SUGGESTED_PDM, DQ_ACTUALS, DQ_AI_ISSUES, IMPACT_ANALYSIS_DATA
+  AI_SUGGESTED_PDM, DQ_ACTUALS, DQ_AI_ISSUES, IMPACT_ANALYSIS_DATA,
+  DQ_ELEMENT_ASSESSMENT, GAP_REMEDIATION_SUGGESTIONS
 } from './data.js';
 
 // ============================================================
@@ -357,10 +358,10 @@ const STEP_RACI = {
   2: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Data Product Owner', phase: 'Intake' },
   3: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
   4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
-  5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
-  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Data Steward', phase: 'Execution' },
+  5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DDS Data Steward', phase: 'Execution' },
+  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
   7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
-  8: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
+  8: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
   9: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Closing' },
 };
 
@@ -713,10 +714,10 @@ function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPerson
     { n: 2, label: 'Business Requirements', icon: <Sparkles size={16} /> },
     { n: 3, label: 'FRIM Mapping', icon: <BookOpen size={16} /> },
     { n: 4, label: 'BLDM Mapping', icon: <Layers size={16} /> },
-    { n: 5, label: 'Cross-Domain Sourcing', icon: <GitBranch size={16} /> },
-    { n: 6, label: 'PDM & DDS', icon: <Database size={16} /> },
-    { n: 7, label: 'Gap Analysis', icon: <BarChart3 size={16} /> },
-    { n: 8, label: 'DQ Monitoring', icon: <Shield size={16} /> },
+    { n: 5, label: 'DDS Availability', icon: <Database size={16} /> },
+    { n: 6, label: 'DQ Assessment', icon: <Shield size={16} /> },
+    { n: 7, label: 'DDS Gaps', icon: <BarChart3 size={16} /> },
+    { n: 8, label: 'Data Sourcing', icon: <GitBranch size={16} /> },
     { n: 9, label: 'Closing', icon: <CheckCircle2 size={16} /> },
   ];
 
@@ -2165,17 +2166,15 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
 }
 
 // ============================================================
-// Step 5 — DDS Availability (reordered from Step 4)
+// Step 5 — DDS Availability
 // ============================================================
-function Step4DDS({ selectedUC, selectedEntities, onNext, stepNum = 5 }) {
+function Step5DDSAvailability({ selectedUC, selectedEntities, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const ddsData = DDS_AVAILABILITY[selectedUC] || {};
   const activeEntities = LEGAL_ENTITIES.filter(le => selectedEntities.includes(le.id));
   const [expandedProduct, setExpandedProduct] = useState(null);
   const [expandedEntity, setExpandedEntity] = useState(null);
   const [kpiFilter, setKpiFilter] = useState(null);
-  const suggestedPdm = AI_SUGGESTED_PDM[selectedUC] || [];
-  const [acceptedPdm, setAcceptedPdm] = useState({});
 
   const totals = useMemo(() => {
     let avail = 0, partial = 0, unavail = 0;
@@ -2214,9 +2213,9 @@ function Step4DDS({ selectedUC, selectedEntities, onNext, stepNum = 5 }) {
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[5]?.main || "Overview of data available in the DDS per legal entity."} tip={STEP_TOOLTIPS[5]?.dds || "Shows which data elements are already available in the DDS."}>
-        Step {stepNum} — Physical Data Model & DDS Availability
+        Step 5 — DDS Availability
       </SectionHeader>
-      <OwnershipBar step={stepNum} />
+      <OwnershipBar step={5} />
 
       {/* Clickable KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -2225,59 +2224,6 @@ function Step4DDS({ selectedUC, selectedEntities, onNext, stepNum = 5 }) {
         <KpiCard label="Not in DDS" value={totals.unavail} color={COLORS.red} active={kpiFilter === 'unavail'} onClick={() => setKpiFilter(kpiFilter === 'unavail' ? null : 'unavail')} />
         <KpiCard label="DDS Coverage" value={`${totals.coverage}%`} color={COLORS.petrol} />
       </div>
-
-      {/* AI-Suggested Physical Data Model */}
-      {suggestedPdm.length > 0 && (
-        <div style={{ ...styles.card }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Sparkles size={18} color={COLORS.petrol} />
-              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>AI-Suggested Physical Data Model</span>
-              <InfoTooltip text="AI-generated PDM table structure based on your FRIM requirements. Review and accept or modify each suggestion." />
-            </div>
-            <span style={styles.badge(`${COLORS.petrol}15`, COLORS.petrol)}>
-              {Object.values(acceptedPdm).filter(Boolean).length}/{suggestedPdm.length} accepted
-            </span>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Table</th>
-                  <th style={styles.th}>Column</th>
-                  <th style={styles.th}>Data Type</th>
-                  <th style={styles.th}>FRIM Term</th>
-                  <th style={styles.th}>Nullable</th>
-                  <th style={styles.th}>Description</th>
-                  <th style={styles.th}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {suggestedPdm.map((row, i) => (
-                  <tr key={i} style={{ background: acceptedPdm[i] ? `${COLORS.green}06` : 'transparent', transition: 'background 0.15s' }}>
-                    <td style={{ ...styles.td, ...styles.fontMono, fontSize: 11, color: COLORS.petrol }}>{row.table}</td>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{row.column}</td>
-                    <td style={styles.td}><span style={styles.bldmBadge}>{row.dataType}</span></td>
-                    <td style={styles.td}><span style={styles.frimTerm}>{row.frimTerm}</span></td>
-                    <td style={{ ...styles.td, textAlign: 'center' }}>{row.nullable ? 'Yes' : 'No'}</td>
-                    <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{row.description}</td>
-                    <td style={styles.td}>
-                      {acceptedPdm[i] ? (
-                        <span style={styles.badge(`${COLORS.green}15`, COLORS.green)}><Check size={10} /> Accepted</span>
-                      ) : (
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button style={{ ...styles.btnPrimary, padding: '4px 10px', fontSize: 11 }} onClick={() => setAcceptedPdm(prev => ({ ...prev, [i]: true }))}>Accept</button>
-                          <button style={{ ...styles.btnSecondary, padding: '4px 10px', fontSize: 11 }}>Modify</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {/* Entity Availability Matrix — Expandable */}
       <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
@@ -2461,11 +2407,264 @@ function Step4DDS({ selectedUC, selectedEntities, onNext, stepNum = 5 }) {
           <Download size={14} /> Export DDS Availability
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Gap Analysis <ArrowRight size={16} />
+          Next: DQ Assessment <ArrowRight size={16} />
         </button>
       </div>
 
-      <ReviewPanel step={stepNum} />
+      <ReviewPanel step={5} />
+    </div>
+  );
+}
+
+// ============================================================
+// Step 6 — DQ Assessment (NEW)
+// ============================================================
+function Step6DQAssessment({ selectedUC, onNext }) {
+  const reqs = REQUIREMENTS[selectedUC] || [];
+  const dqElements = DQ_ELEMENT_ASSESSMENT[selectedUC] || DQ_ELEMENT_ASSESSMENT[1] || [];
+  const dqIssues = DQ_AI_ISSUES[selectedUC] || DQ_AI_ISSUES[1] || [];
+  const dqActuals = DQ_ACTUALS[selectedUC] || DQ_ACTUALS[1] || [];
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [showDashboard, setShowDashboard] = useState(false);
+
+  const goodCount = dqElements.filter(e => e.overallStatus === 'good').length;
+  const warningCount = dqElements.filter(e => e.overallStatus === 'warning').length;
+  const criticalCount = dqElements.filter(e => e.overallStatus === 'critical').length;
+  const highIssues = dqIssues.filter(i => i.severity === 'High').length;
+
+  // Group elements by BLDM entity
+  const entityGroups = useMemo(() => {
+    const groups = {};
+    dqElements.forEach(el => {
+      if (!groups[el.entity]) groups[el.entity] = [];
+      groups[el.entity].push(el);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [dqElements]);
+
+  const severityColors = { High: COLORS.red, Medium: COLORS.yellow, Low: COLORS.petrol };
+
+  const chartData = dqActuals.map(d => ({ dimension: d.dimension, Threshold: d.threshold, Actual: d.actual }));
+  const passCount = dqActuals.filter(d => d.actual >= d.threshold).length;
+  const failCount = dqActuals.filter(d => d.actual < d.threshold).length;
+  const pieData = [
+    { name: 'Pass', value: passCount, fill: COLORS.green },
+    { name: 'Fail', value: failCount, fill: COLORS.red },
+  ];
+
+  return (
+    <div>
+      <SectionHeader sub={STEP_TOOLTIPS[6]?.main || "Assess data quality per element available in the DDS."} tip="Per-element quality assessment with traffic light indicators.">
+        Step 6 — DQ Assessment
+      </SectionHeader>
+      <OwnershipBar step={6} />
+
+      {/* KPI Cards */}
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        <KpiCard label="Elements Assessed" value={dqElements.length} color={COLORS.petrol} />
+        <KpiCard label="Good Quality" value={goodCount} color={COLORS.green} />
+        <KpiCard label="Needs Attention" value={warningCount} color={COLORS.yellow} />
+        <KpiCard label="Critical" value={criticalCount} color={COLORS.red} />
+      </div>
+
+      {/* Per-Element DQ Table — grouped by entity */}
+      <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${COLORS.lightGrey}18` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Data Quality per Element</div>
+          <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4 }}>Click a row to see quality breakdown by dimension</div>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ ...styles.th, width: 40 }}></th>
+                <th style={styles.th}>FRIM Term</th>
+                <th style={styles.th}>Entity</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>CDE</th>
+                <th style={{ ...styles.th, textAlign: 'center', minWidth: 140 }}>Overall Score</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
+                <th style={{ ...styles.th, width: 30 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {entityGroups.map(([entityName, elements]) => (
+                <React.Fragment key={entityName}>
+                  {/* Entity group header */}
+                  <tr>
+                    <td colSpan={7} style={{ padding: '10px 20px 6px', background: `${COLORS.petrol}06`, fontWeight: 700, fontSize: 12, color: COLORS.petrol, letterSpacing: 0.5, textTransform: 'uppercase', borderBottom: `1px solid ${COLORS.lightGrey}15`, ...styles.fontSans }}>
+                      {entityName} ({elements.length})
+                    </td>
+                  </tr>
+                  {elements.map(el => {
+                    const isExpanded = expandedRow === el.reqId;
+                    return (
+                      <React.Fragment key={el.reqId}>
+                        <tr
+                          style={{ cursor: 'pointer', transition: 'background 0.15s', background: isExpanded ? `${COLORS.green}06` : 'transparent' }}
+                          onClick={() => setExpandedRow(isExpanded ? null : el.reqId)}
+                        >
+                          <td style={{ ...styles.td, textAlign: 'center', fontSize: 18 }}>
+                            {el.overallStatus === 'good' ? '🟢' : el.overallStatus === 'warning' ? '🟡' : '🔴'}
+                          </td>
+                          <td style={{ ...styles.td, ...styles.frimTerm, fontSize: 13 }}>{el.frimTerm}</td>
+                          <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{el.entity}</td>
+                          <td style={{ ...styles.td, textAlign: 'center' }}>{el.cde && <CdeBadge cde={true} />}</td>
+                          <td style={{ ...styles.td, textAlign: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                              <div style={{ width: 100, height: 8, background: `${COLORS.lightGrey}25`, borderRadius: 4, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${el.overallScore}%`, background: el.overallScore >= 97 ? COLORS.green : el.overallScore >= 94 ? COLORS.yellow : COLORS.red, borderRadius: 4, transition: 'width 0.4s' }} />
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: el.overallScore >= 97 ? COLORS.green : el.overallScore >= 94 ? '#92750a' : COLORS.red, minWidth: 36 }}>{el.overallScore}%</span>
+                            </div>
+                          </td>
+                          <td style={{ ...styles.td, textAlign: 'center' }}>
+                            <span style={styles.badge(
+                              el.overallStatus === 'good' ? `${COLORS.green}15` : el.overallStatus === 'warning' ? `${COLORS.yellow}25` : `${COLORS.red}15`,
+                              el.overallStatus === 'good' ? COLORS.green : el.overallStatus === 'warning' ? '#92750a' : COLORS.red
+                            )}>
+                              {el.overallStatus === 'good' ? 'Good' : el.overallStatus === 'warning' ? 'Attention' : 'Critical'}
+                            </span>
+                          </td>
+                          <td style={styles.td}>{isExpanded ? <ChevronDown size={14} color={COLORS.mediumGrey} /> : <ChevronRight size={14} color={COLORS.mediumGrey} />}</td>
+                        </tr>
+                        {/* Expanded dimension breakdown */}
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={7} style={{ padding: '0 20px 16px', background: `${COLORS.green}04` }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, paddingTop: 12 }}>
+                                {Object.entries(el.scores).map(([dim, data]) => (
+                                  <div key={dim} style={{ background: '#fff', borderRadius: 10, padding: 12, border: `1px solid ${data.status === 'pass' ? COLORS.green : COLORS.red}20`, textAlign: 'center' }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.mediumGrey, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{dim}</div>
+                                    <div style={{ fontSize: 22, fontWeight: 700, color: data.status === 'pass' ? COLORS.green : COLORS.red, ...styles.fontSerif }}>{data.value}%</div>
+                                    <div style={{ width: '100%', height: 4, background: `${COLORS.lightGrey}25`, borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
+                                      <div style={{ height: '100%', width: `${data.value}%`, background: data.status === 'pass' ? COLORS.green : COLORS.red, borderRadius: 2 }} />
+                                    </div>
+                                    <div style={{ fontSize: 10, color: COLORS.mediumGrey, marginTop: 4 }}>Threshold: {data.threshold}%</div>
+                                    <div style={{ marginTop: 4 }}>
+                                      <span style={styles.badge(data.status === 'pass' ? `${COLORS.green}15` : `${COLORS.red}15`, data.status === 'pass' ? COLORS.green : COLORS.red)}>
+                                        {data.status === 'pass' ? '✅ Pass' : '❌ Fail'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* AI-Detected DQ Issues */}
+      {dqIssues.length > 0 && (
+        <div style={{ ...styles.card }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <AlertTriangle size={18} color={highIssues > 0 ? COLORS.red : COLORS.yellow} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>AI-Detected Quality Issues</span>
+            <span style={styles.badge(highIssues > 0 ? `${COLORS.red}15` : `${COLORS.yellow}20`, highIssues > 0 ? COLORS.red : '#92750a')}>{dqIssues.length} issues</span>
+          </div>
+          <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+            {dqIssues.map((issue, i) => (
+              <div key={i} style={{ borderRadius: 12, border: `1px solid ${severityColors[issue.severity]}25`, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: `1px solid ${COLORS.lightGrey}15`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: `${severityColors[issue.severity]}06` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={styles.badge(`${severityColors[issue.severity]}18`, severityColors[issue.severity])}>{issue.severity}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{issue.title}</span>
+                  </div>
+                  <span style={{ fontSize: 10, color: COLORS.mediumGrey }}>{issue.trend}</span>
+                </div>
+                <div style={{ padding: 16 }}>
+                  <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.5, marginBottom: 10 }}>{issue.description}</div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {issue.affected.map(a => <span key={a} style={{ ...styles.badge(`${COLORS.petrol}10`, COLORS.petrol), fontSize: 10 }}>{a}</span>)}
+                  </div>
+                  <div style={{ padding: 10, background: `${COLORS.green}06`, borderRadius: 8, border: `1px solid ${COLORS.green}15` }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.green, marginBottom: 4 }}>Suggested Remediation</div>
+                    <div style={{ fontSize: 12, color: COLORS.darkGreen }}>{issue.remediation}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Collapsible DQ Dashboard */}
+      <div style={{ ...styles.card }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+          onClick={() => setShowDashboard(!showDashboard)}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BarChart3 size={16} color={COLORS.petrol} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Dashboard Summary</span>
+          </div>
+          {showDashboard ? <ChevronDown size={16} color={COLORS.mediumGrey} /> : <ChevronRight size={16} color={COLORS.mediumGrey} />}
+        </div>
+        {showDashboard && (
+          <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginTop: 16 }}>
+            <div style={{ height: 250 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 8, ...styles.fontSans }}>Threshold vs Actual by Dimension</div>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.lightGrey}30`} />
+                  <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: COLORS.mediumGrey }} />
+                  <YAxis domain={[85, 100]} tick={{ fontSize: 10, fill: COLORS.mediumGrey }} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Threshold" fill={`${COLORS.petrol}60`} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Actual" radius={[4, 4, 0, 0]}>
+                    {chartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.Actual >= entry.Threshold ? COLORS.green : COLORS.red} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 8, ...styles.fontSans }}>Pass / Fail Distribution</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={4} dataKey="value">
+                    {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ fontSize: 11, color: COLORS.mediumGrey, textAlign: 'center' }}>
+                <span style={{ color: COLORS.green, fontWeight: 700 }}>{passCount} pass</span> · <span style={{ color: COLORS.red, fontWeight: 700 }}>{failCount} fail</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Export + Next */}
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
+          const data = dqElements.map(el => ({
+            'FRIM Term': el.frimTerm, 'Entity': el.entity, 'CDE': el.cde ? 'Yes' : 'No',
+            'Overall Score': `${el.overallScore}%`, 'Status': el.overallStatus,
+            'Completeness': `${el.scores.completeness.value}%`, 'Accuracy': `${el.scores.accuracy.value}%`,
+            'Timeliness': `${el.scores.timeliness.value}%`, 'Consistency': `${el.scores.consistency.value}%`,
+            'Validity': `${el.scores.validity.value}%`,
+          }));
+          exportToExcel(data, 'DQ Assessment', `DQ_Assessment_UC${selectedUC}.xlsx`);
+        }}>
+          <Download size={14} /> Export DQ Assessment
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: DDS Gaps <ArrowRight size={16} />
+        </button>
+      </div>
+
+      <ReviewPanel step={6} />
     </div>
   );
 }
@@ -2692,7 +2891,7 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext, stepNum = 3 }) {
           <Download size={14} /> Export BLDM Mapping
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Cross-Domain Sourcing <ArrowRight size={16} />
+          Next: DDS Availability <ArrowRight size={16} />
         </button>
       </div>
 
@@ -2702,11 +2901,12 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext, stepNum = 3 }) {
 }
 
 // ============================================================
-// Step 6 — Data Origination (was Step 4)
+// Step 8 — Data Sourcing (was Cross-Domain Sourcing)
 // ============================================================
-function Step6Origination({ selectedUC, onNext, stepNum = 4 }) {
+function Step8DataSourcing({ selectedUC, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const [activeTab, setActiveTab] = useState('Credits');
+  const [showGapsOnly, setShowGapsOnly] = useState(true);
   const mappings = SOURCE_MAPPINGS[selectedUC] || SOURCE_MAPPINGS[1];
 
   const domainStats = useMemo(() => {
@@ -2723,14 +2923,27 @@ function Step6Origination({ selectedUC, onNext, stepNum = 4 }) {
     Markets: { systems: 'Collateral Mgmt, Rating System, Market Risk Engine', sla: 'T+1 by 08:00 CET' },
   };
 
-  const tabMappings = mappings?.[activeTab] || [];
+  const allTabMappings = mappings?.[activeTab] || [];
+  const tabMappings = showGapsOnly ? allTabMappings.filter(m => m.status === 'new' || m.status === 'review') : allTabMappings;
 
   return (
     <div>
-      <SectionHeader sub="Dual-BLDM mapping: source domain model → F&R data model. Where does each data element come from?" tip="This step traces each data requirement back to its source system. It maps the source domain attributes (Credits, Consumer, Markets) to the F&R data model, identifying exact matches, items needing review, and new sourcing routes.">
-        Step {stepNum} — Data Origination & Cross-Domain Sourcing
+      <SectionHeader sub="Based on FRIM, BLDM, and cross-domain knowledge, identify where data should be sourced from across Credits, Consumer, and Markets domains." tip="This step traces each data requirement back to its source system, mapping source domain attributes to the F&R data model.">
+        Step 8 — Data Sourcing
       </SectionHeader>
-      <OwnershipBar step={stepNum} />
+      <OwnershipBar step={8} />
+
+      {/* Gaps toggle */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button
+          style={{ ...showGapsOnly ? styles.btnPrimary : styles.btnSecondary, padding: '8px 16px', fontSize: 12 }}
+          onClick={() => setShowGapsOnly(true)}
+        >Gaps Only</button>
+        <button
+          style={{ ...!showGapsOnly ? styles.btnPrimary : styles.btnSecondary, padding: '8px 16px', fontSize: 12 }}
+          onClick={() => setShowGapsOnly(false)}
+        >All Mappings</button>
+      </div>
 
       <div style={{ ...styles.card }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 40, padding: '16px 0' }}>
@@ -2879,86 +3092,80 @@ function Step6Origination({ selectedUC, onNext, stepNum = 4 }) {
           <Download size={14} /> Export Source Mapping
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: PDM & DDS <ArrowRight size={16} />
+          Next: Closing <ArrowRight size={16} />
         </button>
       </div>
 
-      <ReviewPanel step={stepNum} />
+      <ReviewPanel step={8} />
     </div>
   );
 }
 
 // ============================================================
-// Step 7 — Gap Analysis (was Step 5)
+// Step 7 — DDS Gaps & Remediation
 // ============================================================
-function Step7Gap({ selectedUC, birdEnabled, onNext, stepNum = 6 }) {
+function Step7DDSGaps({ selectedUC, birdEnabled, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const stats = useMemo(() => getStats(reqs), [reqs]);
-  const [kpiFilter, setKpiFilter] = useState(null);
+  const remediation = GAP_REMEDIATION_SUGGESTIONS[selectedUC] || {};
+  const [expandedGap, setExpandedGap] = useState(null);
+
+  // Only show gap items (new, review, unmapped)
+  const gapReqs = useMemo(() => reqs.filter(r => r.match === 'new' || r.match === 'review' || r.match === 'unmapped'), [reqs]);
+  const withRemediation = gapReqs.filter(r => remediation[r.id]).length;
 
   const chartData = useMemo(() => {
     return ['Credits', 'Consumer', 'Markets'].map(d => ({
       domain: d,
-      Available: reqs.filter(r => r.domain === d && r.match === 'exact').length,
       Review: reqs.filter(r => r.domain === d && r.match === 'review').length,
-      Gap: reqs.filter(r => r.domain === d && r.match === 'new').length,
+      New: reqs.filter(r => r.domain === d && r.match === 'new').length,
+      Unmapped: reqs.filter(r => r.domain === d && r.match === 'unmapped').length,
     }));
   }, [reqs]);
 
   const pieData = [
-    { name: 'Available', value: stats.exact, fill: COLORS.green },
     { name: 'Review', value: stats.review, fill: COLORS.yellow },
-    { name: 'New/Gap', value: stats.newR, fill: COLORS.red },
-  ];
-
-  const filteredGapReqs = useMemo(() => {
-    let filtered = reqs;
-    if (kpiFilter === 'available') filtered = reqs.filter(r => r.match === 'exact');
-    else if (kpiFilter === 'review') filtered = reqs.filter(r => r.match === 'review');
-    else if (kpiFilter === 'new') filtered = reqs.filter(r => r.match === 'new');
-    else if (kpiFilter === 'cde') filtered = reqs.filter(r => r.cde && r.match === 'new');
-    else filtered = reqs.filter(r => r.match !== 'exact');
-    return filtered;
-  }, [reqs, kpiFilter]);
+    { name: 'New', value: stats.newR, fill: COLORS.red },
+    { name: 'Unmapped', value: stats.unmapped, fill: COLORS.mediumGrey },
+  ].filter(d => d.value > 0);
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[6]?.main || "Executive overview: what do we have, what's missing, and what needs to happen?"} tip="Gap analysis dashboard showing coverage and effort required.">
-        Step {stepNum} — Gap Analysis & Data Availability
+      <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Identify data gaps in DDS coverage with remediation suggestions."} tip="Shows what data is missing and how to add it to the DDS.">
+        Step 7 — DDS Gaps & Remediation
       </SectionHeader>
-      <OwnershipBar step={stepNum} />
+      <OwnershipBar step={7} />
 
-      {/* Clickable KPI Cards */}
-      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: birdEnabled ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-        <KpiCard label="Available in F&R DDS" value={stats.exact} color={COLORS.green} active={kpiFilter === 'available'} onClick={() => setKpiFilter(kpiFilter === 'available' ? null : 'available')} />
-        <KpiCard label="Review Needed" value={stats.review} color={COLORS.yellow} active={kpiFilter === 'review'} onClick={() => setKpiFilter(kpiFilter === 'review' ? null : 'review')} />
-        <KpiCard label="New Sourcing Required" value={stats.newR} color={COLORS.red} active={kpiFilter === 'new'} onClick={() => setKpiFilter(kpiFilter === 'new' ? null : 'new')} />
-        <KpiCard label="Requirements Coverage" value={`${stats.coverage}%`} color={COLORS.green} />
-        <KpiCard label="New CDEs to Register" value={stats.newCdes} color={COLORS.yellow} active={kpiFilter === 'cde'} onClick={() => setKpiFilter(kpiFilter === 'cde' ? null : 'cde')} />
-        {birdEnabled && <KpiCard label="BIRD Alignment" value={stats.birdTotal > 0 ? `${Math.round(stats.birdAligned / stats.birdTotal * 100)}%` : '0%'} color={COLORS.petrol} />}
+      {/* KPI Cards */}
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        <KpiCard label="Gaps Found" value={gapReqs.length} color={COLORS.red} />
+        <KpiCard label="With Remediation" value={withRemediation} color={COLORS.green} />
+        <KpiCard label="New CDEs" value={stats.newCdes} color={COLORS.yellow} />
+        <KpiCard label="Requirements Coverage" value={`${stats.coverage}%`} color={COLORS.petrol} />
       </div>
 
+      {/* Charts */}
       <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 20 }}>
         <div style={{ ...styles.card }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Breakdown by Source Domain</div>
-          <ResponsiveContainer width="100%" height={250}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Gaps by Domain</div>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.lightGrey}30`} />
               <XAxis dataKey="domain" fontSize={12} tick={{ fill: COLORS.darkGrey }} />
               <YAxis fontSize={12} tick={{ fill: COLORS.darkGrey }} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Available" fill={COLORS.green} radius={[6, 6, 0, 0]} />
               <Bar dataKey="Review" fill={COLORS.yellow} radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Gap" fill={COLORS.red} radius={[6, 6, 0, 0]} />
+              <Bar dataKey="New" fill={COLORS.red} radius={[6, 6, 0, 0]} />
+              <Bar dataKey="Unmapped" fill={COLORS.mediumGrey} radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
         <div style={{ ...styles.card }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Coverage Overview</div>
-          <ResponsiveContainer width="100%" height={250}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Gap Distribution</div>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" label={({ name, value }) => `${name}: ${value}`} fontSize={11}>
+              <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`} fontSize={11}>
                 {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
               </Pie>
               <Tooltip />
@@ -2967,84 +3174,116 @@ function Step7Gap({ selectedUC, birdEnabled, onNext, stepNum = 6 }) {
         </div>
       </div>
 
+      {/* CDE Impact */}
       <div style={{ ...styles.card }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>🔶 CDE Impact Panel</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>🔶 CDE Impact</div>
         <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
-            { label: 'Total CDE Candidates', value: stats.cdes, bg: `${COLORS.yellow}0c` },
-            { label: 'Already Registered', value: stats.cdes - stats.newCdes, bg: `${COLORS.green}08` },
-            { label: 'New Registrations', value: stats.newCdes, bg: `${COLORS.red}08` },
-            { label: 'Approval Required', value: stats.newCdes, bg: `${COLORS.yellow}0c` },
+            { label: 'Total CDE Candidates', value: stats.cdes, bg: `${COLORS.yellow}0c`, color: '#92750a' },
+            { label: 'Already Registered', value: stats.cdes - stats.newCdes, bg: `${COLORS.green}08`, color: COLORS.green },
+            { label: 'New Registrations', value: stats.newCdes, bg: `${COLORS.red}08`, color: COLORS.red },
+            { label: 'Approval Required', value: stats.newCdes, bg: `${COLORS.yellow}0c`, color: '#92750a' },
           ].map((d, i) => (
             <div key={i} style={{ background: d.bg, borderRadius: 10, padding: 14, textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: i === 0 || i === 3 ? '#92750a' : i === 1 ? COLORS.green : COLORS.red, ...styles.fontSerif }}>{d.value}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: d.color, ...styles.fontSerif }}>{d.value}</div>
               <div style={{ fontSize: 11, color: COLORS.darkGrey }}>{d.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ ...styles.card }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>📊 DQ Readiness Panel</div>
-        <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-          {[
-            { label: 'Meeting Thresholds', value: `${stats.exact}/${stats.total}`, color: COLORS.green },
-            { label: 'Completeness Risks', value: stats.newR, color: COLORS.red },
-            { label: 'Timeliness Gaps', value: 0, color: COLORS.green },
-            { label: 'Cross-Domain Checks', value: stats.review, color: COLORS.yellow },
-          ].map((d, i) => (
-            <div key={i} style={{ background: `${d.color}08`, borderRadius: 10, padding: 14, textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: d.color, ...styles.fontSerif }}>{d.value}</div>
-              <div style={{ fontSize: 11, color: COLORS.darkGrey }}>{d.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      {/* Gap Table with Remediation */}
       <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px 0', fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Detailed Gap Table</div>
+        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${COLORS.lightGrey}18` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Gap Items & Remediation</div>
+          <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4 }}>Click a row to see remediation details — how to map and import into DDS</div>
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th style={styles.th}>#</th>
-                <th style={styles.th}>FRIM Lexicon Term</th>
-                <th style={styles.th}>F&R DDS Status</th>
-                <th style={styles.th}>Source Available?</th>
-                <th style={styles.th}>Gap Type</th>
+                <th style={styles.th}>Requirement</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Entity</th>
                 <th style={styles.th}>CDE</th>
-                <th style={styles.th}>DQ Risk</th>
-                <th style={styles.th}>Action</th>
+                <th style={styles.th}>Effort</th>
+                <th style={styles.th}></th>
               </tr>
             </thead>
             <tbody>
-              {filteredGapReqs.map((r, i) => (
-                <tr key={r.id} style={{ transition: 'background 0.15s' }}>
-                  <td style={styles.td}>{r.id}</td>
-                  <td style={styles.td}><span style={styles.frimTerm}>{r.frim}</span></td>
-                  <td style={styles.td}><MatchBadge match={r.match} /></td>
-                  <td style={styles.td}>{r.match === 'exact' ? <span style={{ color: COLORS.green }}>Yes</span> : r.match === 'review' ? <span style={{ color: COLORS.yellow }}>Partial</span> : <span style={{ color: COLORS.red }}>No</span>}</td>
-                  <td style={{ ...styles.td, fontSize: 12, color: COLORS.darkGrey }}>{r.match === 'new' ? 'New attribute + sourcing route' : r.match === 'review' ? 'Definition alignment' : 'Available'}</td>
-                  <td style={styles.td}><CdeBadge cde={r.cde} /></td>
-                  <td style={styles.td}>{r.cde && r.match === 'new' ? <span style={{ color: COLORS.red, fontSize: 12, fontWeight: 600 }}>High</span> : r.match === 'exact' ? <span style={{ color: COLORS.green, fontSize: 12 }}>Low</span> : <span style={{ color: COLORS.yellow, fontSize: 12 }}>Medium</span>}</td>
-                  <td style={{ ...styles.td, fontSize: 12, color: COLORS.darkGrey }}>{r.match === 'new' ? 'Add + source + register CDE' : r.match === 'review' ? 'Review definition' : 'None'}</td>
-                </tr>
-              ))}
+              {gapReqs.map(r => {
+                const rem = remediation[r.id];
+                const isExpanded = expandedGap === r.id;
+                return (
+                  <React.Fragment key={r.id}>
+                    <tr
+                      style={{ cursor: 'pointer', transition: 'background 0.15s', background: isExpanded ? `${COLORS.red}06` : 'transparent' }}
+                      onClick={() => setExpandedGap(isExpanded ? null : r.id)}
+                    >
+                      <td style={styles.td}>{r.id}</td>
+                      <td style={{ ...styles.td, fontWeight: 600 }}>{r.businessReq || r.frim}</td>
+                      <td style={styles.td}><MatchBadge match={r.match} /></td>
+                      <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{r.entity}</td>
+                      <td style={styles.td}><CdeBadge cde={r.cde} /></td>
+                      <td style={styles.td}>
+                        {rem ? (
+                          <span style={styles.badge(
+                            rem.estimatedEffort.startsWith('Low') ? `${COLORS.green}15` : rem.estimatedEffort.startsWith('Medium') ? `${COLORS.yellow}20` : `${COLORS.red}15`,
+                            rem.estimatedEffort.startsWith('Low') ? COLORS.green : rem.estimatedEffort.startsWith('Medium') ? '#92750a' : COLORS.red
+                          )}>{rem.estimatedEffort}</span>
+                        ) : <span style={{ fontSize: 12, color: COLORS.mediumGrey }}>—</span>}
+                      </td>
+                      <td style={styles.td}>{isExpanded ? <ChevronDown size={14} color={COLORS.mediumGrey} /> : <ChevronRight size={14} color={COLORS.mediumGrey} />}</td>
+                    </tr>
+                    {isExpanded && rem && (
+                      <tr>
+                        <td colSpan={7} style={{ padding: '0 20px 16px', background: `${COLORS.red}04` }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, paddingTop: 12 }}>
+                            <div style={{ background: '#fff', borderRadius: 10, padding: 14, border: `1px solid ${COLORS.petrol}20` }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.petrol, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>DDS Mapping</div>
+                              <div style={{ fontSize: 12, color: COLORS.darkGreen, lineHeight: 1.6, ...styles.fontMono, background: `${COLORS.lightGrey}08`, padding: 10, borderRadius: 6 }}>{rem.ddsMapping}</div>
+                            </div>
+                            <div style={{ background: '#fff', borderRadius: 10, padding: 14, border: `1px solid ${COLORS.green}20` }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.green, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Import Method</div>
+                              <div style={{ fontSize: 12, color: COLORS.darkGreen, lineHeight: 1.6 }}>{rem.importMethod}</div>
+                            </div>
+                            <div style={{ background: '#fff', borderRadius: 10, padding: 14, border: `1px solid ${COLORS.yellow}20` }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#92750a', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Gap Type</div>
+                              <div style={{ fontSize: 12, color: COLORS.darkGreen }}>{rem.gapType}</div>
+                            </div>
+                            <div style={{ background: '#fff', borderRadius: 10, padding: 14, border: `1px solid ${COLORS.lightGrey}20` }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.mediumGrey, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Prerequisite</div>
+                              <div style={{ fontSize: 12, color: COLORS.darkGreen }}>{rem.prerequisite}</div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {isExpanded && !rem && (
+                      <tr>
+                        <td colSpan={7} style={{ padding: '12px 20px', background: `${COLORS.yellow}06`, fontSize: 12, color: '#92750a', fontStyle: 'italic' }}>
+                          No remediation suggestion available yet. This gap requires further analysis by the Requirements & Modelling Team.
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
-      {/* Use Case Matrix — Cross-UC dependency detection */}
+
+      {/* Use Case Matrix */}
       <div style={{ ...styles.card }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Layers size={16} color={COLORS.petrol} /> Use Case Matrix
-              <InfoTooltip text="Shows which FRIM terms are shared across multiple use cases. Shared terms mean one change impacts multiple deliverables — coordinate with other UC owners." />
+              <InfoTooltip text="Shows which FRIM terms are shared across multiple use cases. Shared terms mean one change impacts multiple deliverables." />
             </div>
-            <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4, ...styles.fontSans }}>
-              Cross-use-case data element dependencies — shared FRIM terms that appear in this use case and others
-            </div>
+            <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4, ...styles.fontSans }}>Cross-UC dependencies — shared FRIM terms</div>
           </div>
           <span style={styles.badge(`${COLORS.petrol}15`, COLORS.petrol)}>
             {Object.entries(USE_CASE_MATRIX || {}).filter(([, ucs]) => ucs.includes(selectedUC) && ucs.length > 1).length} shared terms
@@ -3104,226 +3343,33 @@ function Step7Gap({ selectedUC, birdEnabled, onNext, stepNum = 6 }) {
         })()}
       </div>
 
-      {/* Export, Create & Next buttons */}
+      {/* Export & Next */}
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => alert('Add Gap Item modal — coming soon')}>
-          <Plus size={14} /> Add Gap Item
-        </button>
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
-          const data = reqs.filter(r => r.match !== 'exact').map(r => ({
-            'ID': r.id, 'FRIM Term': r.frim, 'Status': r.match, 'CDE': r.cde ? 'Yes' : 'No',
-            'Gap Type': r.match === 'new' ? 'New attribute + sourcing' : 'Definition alignment',
-            'DQ Risk': r.cde && r.match === 'new' ? 'High' : 'Medium',
-          }));
-          exportToExcel(data, 'Gap Analysis', `Gap_Analysis_UC${selectedUC}.xlsx`);
+          const data = gapReqs.map(r => {
+            const rem = remediation[r.id];
+            return {
+              'ID': r.id, 'Requirement': r.businessReq || r.frim, 'Status': r.match, 'Entity': r.entity,
+              'CDE': r.cde ? 'Yes' : 'No', 'Effort': rem?.estimatedEffort || '—',
+              'DDS Mapping': rem?.ddsMapping || '—', 'Import Method': rem?.importMethod || '—',
+              'Prerequisite': rem?.prerequisite || '—',
+            };
+          });
+          exportToExcel(data, 'DDS Gaps', `DDS_Gaps_UC${selectedUC}.xlsx`);
         }}>
-          <Download size={14} /> Export Gap Analysis
+          <Download size={14} /> Export DDS Gaps
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: DQ Monitoring <ArrowRight size={16} />
+          Next: Data Sourcing <ArrowRight size={16} />
         </button>
       </div>
 
-      <ReviewPanel step={stepNum} />
+      <ReviewPanel step={7} />
     </div>
   );
 }
 
-// ============================================================
-// Step 7 — DQ Monitoring & AI Checks (NEW)
-// ============================================================
-function Step7DQMonitoring({ selectedUC, onNext }) {
-  const reqs = REQUIREMENTS[selectedUC] || [];
-  const dqActuals = DQ_ACTUALS[selectedUC] || DQ_ACTUALS[1] || [];
-  const dqIssues = DQ_AI_ISSUES[selectedUC] || DQ_AI_ISSUES[1] || [];
-
-  const passCount = dqActuals.filter(d => d.actual >= d.threshold).length;
-  const failCount = dqActuals.filter(d => d.actual < d.threshold).length;
-  const avgScore = dqActuals.length > 0 ? Math.round(dqActuals.reduce((s, d) => s + d.actual, 0) / dqActuals.length * 10) / 10 : 0;
-  const highIssues = dqIssues.filter(i => i.severity === 'High').length;
-
-  const chartData = dqActuals.map(d => ({ dimension: d.dimension, Threshold: d.threshold, Actual: d.actual }));
-  const pieData = [
-    { name: 'Pass', value: passCount, fill: COLORS.green },
-    { name: 'Fail', value: failCount, fill: COLORS.red },
-  ];
-
-  const severityColors = { High: COLORS.red, Medium: COLORS.yellow, Low: COLORS.petrol };
-
-  return (
-    <div>
-      <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Monitor data quality against thresholds."} tip={STEP_TOOLTIPS[7]?.dqTable || "DQ monitoring dashboard."}>
-        Step 8 — DQ Monitoring & AI Checks
-      </SectionHeader>
-      <OwnershipBar step={8} />
-
-      {/* KPI Cards */}
-      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-        <KpiCard label="DQ Dimensions" value={dqActuals.length} color={COLORS.petrol} />
-        <KpiCard label="Passing" value={passCount} color={COLORS.green} />
-        <KpiCard label="Below Threshold" value={failCount} color={COLORS.red} />
-        <KpiCard label="AI Issues Detected" value={dqIssues.length} color={highIssues > 0 ? COLORS.red : COLORS.yellow} />
-      </div>
-
-      {/* DQ Requirements vs Actuals Table */}
-      <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${COLORS.lightGrey}18` }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Requirements vs Actuals</div>
-          <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4 }}>Comparing thresholds from Step 1 against measured DQ values</div>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Dimension</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>Threshold</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>Actual</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>Trend</th>
-                <th style={styles.th}>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dqActuals.map((d, i) => {
-                const pass = d.actual >= d.threshold;
-                return (
-                  <tr key={i} style={{ transition: 'background 0.15s' }}>
-                    <td style={{ ...styles.td, fontWeight: 700 }}>{d.dimension}</td>
-                    <td style={{ ...styles.td, textAlign: 'center' }}>{d.threshold}{d.unit}</td>
-                    <td style={{ ...styles.td, textAlign: 'center', fontWeight: 700, color: pass ? COLORS.green : COLORS.red }}>{d.actual}{d.unit}</td>
-                    <td style={{ ...styles.td, textAlign: 'center' }}>
-                      <span style={styles.badge(pass ? `${COLORS.green}15` : `${COLORS.red}15`, pass ? COLORS.green : COLORS.red)}>
-                        {pass ? <><Check size={10} /> Pass</> : <><X size={10} /> Fail</>}
-                      </span>
-                    </td>
-                    <td style={{ ...styles.td, textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, color: d.trend === 'up' ? COLORS.green : d.trend === 'down' ? COLORS.red : COLORS.mediumGrey }}>
-                        {d.trend === 'up' ? '↑ Improving' : d.trend === 'down' ? '↓ Declining' : '→ Stable'}
-                      </span>
-                    </td>
-                    <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{d.details}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* AI Issue Analysis */}
-      <div style={{ ...styles.card }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <Sparkles size={18} color={COLORS.petrol} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>AI-Detected DQ Issues</span>
-          <InfoTooltip text={STEP_TOOLTIPS[7]?.aiIssues || "AI-detected data quality issues."} />
-          <span style={styles.badge(highIssues > 0 ? `${COLORS.red}15` : `${COLORS.green}15`, highIssues > 0 ? COLORS.red : COLORS.green)}>
-            {highIssues > 0 ? `${highIssues} high severity` : 'No critical issues'}
-          </span>
-        </div>
-        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-          {dqIssues.map(issue => (
-            <div key={issue.id} style={{ borderRadius: 12, border: `1px solid ${severityColors[issue.severity]}25`, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px', borderLeft: `4px solid ${severityColors[issue.severity]}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={styles.badge(`${severityColors[issue.severity]}15`, severityColors[issue.severity])}>{issue.severity}</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{issue.title}</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: COLORS.darkGrey, lineHeight: 1.6, marginBottom: 10 }}>{issue.description}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
-                    {issue.affected.map(a => <span key={a} style={{ ...styles.frimTerm, fontSize: 10, padding: '2px 8px' }}>{a}</span>)}
-                  </div>
-                  <div style={{ padding: 12, background: `${COLORS.green}06`, borderRadius: 8, border: `1px solid ${COLORS.green}15` }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.green, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Suggested Remediation</div>
-                    <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.5 }}>{issue.remediation}</div>
-                  </div>
-                </div>
-                <div style={{ marginLeft: 16, textAlign: 'right', fontSize: 11, color: COLORS.mediumGrey, whiteSpace: 'nowrap' }}>
-                  <div>Detected: {issue.detectedAt}</div>
-                  <div style={{ marginTop: 4 }}>{issue.trend}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* DQ Dashboard Charts */}
-      <div style={{ ...styles.card }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <BarChart3 size={18} color={COLORS.green} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Dashboard</span>
-          <InfoTooltip text={STEP_TOOLTIPS[7]?.dashboard || "Visual DQ dashboard."} />
-        </div>
-        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
-          {/* Bar Chart: Threshold vs Actual per dimension */}
-          <div style={{ background: `${COLORS.lightGrey}08`, borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>Threshold vs Actual by Dimension</div>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.lightGrey}30`} />
-                <XAxis dataKey="dimension" fontSize={11} tick={{ fill: COLORS.darkGrey }} />
-                <YAxis fontSize={11} tick={{ fill: COLORS.darkGrey }} domain={[90, 100]} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="Threshold" fill={`${COLORS.petrol}60`} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Actual" radius={[4, 4, 0, 0]}>
-                  {chartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.Actual >= entry.Threshold ? COLORS.green : COLORS.red} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Pie Chart: Pass/Fail distribution */}
-          <div style={{ background: `${COLORS.lightGrey}08`, borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>Pass/Fail Distribution</div>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ textAlign: 'center', marginTop: 8 }}>
-              <span style={{ fontSize: 24, fontWeight: 700, color: avgScore >= 98 ? COLORS.green : avgScore >= 95 ? COLORS.yellow : COLORS.red, ...styles.fontSerif }}>{avgScore}%</span>
-              <div style={{ fontSize: 11, color: COLORS.mediumGrey }}>Average DQ Score</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Export & Next buttons */}
-      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
-          const data = dqActuals.map(d => ({
-            'Dimension': d.dimension, 'Threshold': `${d.threshold}${d.unit}`, 'Actual': `${d.actual}${d.unit}`,
-            'Status': d.actual >= d.threshold ? 'Pass' : 'Fail', 'Trend': d.trend, 'Details': d.details,
-          }));
-          const issueData = dqIssues.map(i => ({
-            'Severity': i.severity, 'Issue': i.title, 'Description': i.description,
-            'Affected Elements': i.affected.join(', '), 'Remediation': i.remediation, 'Detected': i.detectedAt,
-          }));
-          const ws1 = XLSX.utils.json_to_sheet(data);
-          const ws2 = XLSX.utils.json_to_sheet(issueData);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws1, 'DQ Actuals');
-          XLSX.utils.book_append_sheet(wb, ws2, 'AI Issues');
-          XLSX.writeFile(wb, `DQ_Monitoring_UC${selectedUC}.xlsx`);
-        }}>
-          <Download size={14} /> Export DQ Report
-        </button>
-        <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Closing <ArrowRight size={16} />
-        </button>
-      </div>
-
-      <ReviewPanel step={8} />
-    </div>
-  );
-}
+// (Step7DQMonitoring removed — content migrated to Step6DQAssessment)
 
 // ============================================================
 // Step 9 — Closing (simplified from Handoff)
@@ -3343,10 +3389,10 @@ function Step8Closing({ selectedUC }) {
     { label: 'Requirements', done: true },
     { label: 'FRIM', done: true },
     { label: 'BLDM', done: true },
+    { label: 'DDS Avail', done: true },
+    { label: 'DQ Assess', done: true },
+    { label: 'DDS Gaps', done: true },
     { label: 'Sourcing', done: true },
-    { label: 'PDM & DDS', done: true },
-    { label: 'Gap', done: true },
-    { label: 'DQ Monitor', done: true },
     { label: 'Closing', done: true },
   ];
 
@@ -3692,7 +3738,7 @@ function Step8Handoff({ selectedUC }) {
 // ============================================================
 function PortfolioView({ setActiveStep, setSelectedUC }) {
   const statusColors = { 'In Progress': COLORS.yellow, 'Completed': COLORS.green, 'Not Started': COLORS.mediumGrey, 'Blocked': COLORS.red };
-  const stepLabels = ['Business', 'Reqs', 'FRIM', 'BLDM', 'Sourcing', 'PDM&DDS', 'Gap', 'DQ', 'Closing'];
+  const stepLabels = ['Business', 'Reqs', 'FRIM', 'BLDM', 'DDS', 'DQ', 'Gaps', 'Source', 'Closing'];
 
   const ucPortfolio = useMemo(() => {
     return USE_CASE_LIST.map(uc => {
@@ -3956,10 +4002,10 @@ export default function App() {
           {activeStep === 2 && <Step2BusinessNeed selectedUC={selectedUC} onNext={() => setActiveStep(3)} />}
           {activeStep === 3 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(4)} stepLabel="3" />}
           {activeStep === 4 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(5)} stepNum={4} />}
-          {activeStep === 5 && <Step6Origination selectedUC={selectedUC} onNext={() => setActiveStep(6)} stepNum={5} />}
-          {activeStep === 6 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(7)} stepNum={6} />}
-          {activeStep === 7 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(8)} stepNum={7} />}
-          {activeStep === 8 && <Step7DQMonitoring selectedUC={selectedUC} onNext={() => setActiveStep(9)} />}
+          {activeStep === 5 && <Step5DDSAvailability selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(6)} />}
+          {activeStep === 6 && <Step6DQAssessment selectedUC={selectedUC} onNext={() => setActiveStep(7)} />}
+          {activeStep === 7 && <Step7DDSGaps selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(8)} />}
+          {activeStep === 8 && <Step8DataSourcing selectedUC={selectedUC} onNext={() => setActiveStep(9)} />}
           {activeStep === 9 && <Step8Closing selectedUC={selectedUC} />}
         </div>
       </div>
