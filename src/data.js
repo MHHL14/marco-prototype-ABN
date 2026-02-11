@@ -1183,55 +1183,58 @@ export const STEP_TOOLTIPS = {
     main: 'Register your data request as Use Case Owner. Select your organisational grid (persona), pick or create a use case, choose the legal entities in scope, and set the regulatory & policy context that drives data requirements.',
     persona: 'Your organisational grid determines which use cases are available and who owns the data request. Each grid has a Grid Lead who reviews intake registrations.',
     useCase: 'Select an existing use case or create a new one. A use case represents a specific regulatory or business data need that requires data from the F&R Data Domain.',
-    entity: 'Legal entities determine which DDS data stores are in scope. Entity selection affects data availability checks in Step 5.',
+    entity: 'Legal entities determine which DDS data stores are in scope. Entity selection affects data availability checks in Step 6.',
     knowledge: 'Regulations, policies, and reference models form the knowledge base for AI-assisted requirement derivation in Step 2.',
     changeInitiative: 'Link this use case to the Compass change initiative hierarchy (Saga → Episode → Epic) for programme traceability and impact analysis.',
     fileUpload: 'Upload additional regulatory guidance, interpretation notes, or Q&A documents that the team can reference during requirement analysis.',
   },
   2: {
-    main: 'Define your data requirements in business terms. AI derives structured requirements, then you refine them: toggle CDE status, set data quality thresholds, and add or modify requirements as needed.',
+    main: 'Define your data requirements in business terms. AI derives structured requirements, then you refine them: toggle CDE status, add or modify requirements as needed.',
     businessNeed: 'Describe what data you need in plain language. Be specific about the regulatory report, risk calculation, or model input you are building. The AI engine uses this plus the knowledge scope from Step 1 to derive structured data requirements.',
     derivedRequirements: 'AI-derived data requirements based on your business need and regulatory context. You can add new requirements, modify existing ones, remove irrelevant items, and toggle CDE (Critical Data Element) status per requirement.',
-    dqDefinition: 'Set data quality thresholds per requirement. CDE requirements typically need stricter thresholds. Use "AI Suggest DQ" for context-aware recommendations based on CDE status and data domain.',
     cdeToggle: 'Critical Data Elements (CDEs) are data items with the highest impact on regulatory reporting accuracy. CDEs require stricter quality thresholds and governance controls.',
     importReqs: 'Optionally upload existing requirement specifications (CSV, XLSX) to pre-populate the requirements list before AI processing.',
   },
   3: {
+    main: 'Define data quality thresholds for each business requirement. As Use Case Owner, set expectations per data element using DQ dimensions like completeness, accuracy, and timeliness. Use AI suggestions for recommended thresholds.',
+    dqDimensions: 'Manage the set of DQ dimensions used for threshold definition. Default dimensions are Completeness, Accuracy, Timeliness, Consistency, and Validity. You can add, rename, or remove dimensions.',
+    dqDefinition: 'Set data quality thresholds per requirement. CDE requirements typically need stricter thresholds. Use "AI Suggest DQ" for context-aware recommendations based on CDE status and data domain.',
+  },
+  4: {
     main: 'Map your business requirements from Step 2 to FRIM (Finance & Risk Information Model) Lexicon terms. When multiple FRIM terms combine to represent one business requirement, this creates an Element Expression.',
     elementExpression: 'An Element Expression groups multiple FRIM Lexicon terms that together represent one business requirement. For example, EAD combines Original Exposure Amount, Credit Conversion Factor, and Maturity Adjustment.',
     frimMapping: 'Shows how each business requirement maps to one or more FRIM terms. Mappings are AI-suggested but you can change, overwrite, or add new FRIM terms. Each mapping includes a rationale.',
     rationale: 'The reasoning behind each FRIM mapping — explains why this particular FRIM Lexicon term was selected for this business requirement, referencing regulatory articles or policy sections.',
     newTerms: 'New FRIM terms identified by AI that do not exist in the current FRIM Lexicon. These can be exported for governance review and addition to the Lexicon.',
   },
-  4: {
+  5: {
     main: 'Map FRIM Lexicon terms to the F&R Business Logical Data Model (BLDM). Each FRIM term maps to a BLDM entity and attribute, defining the logical data structure.',
     entityOverview: 'Visual overview of which BLDM entities are affected by this use case. Active entities contain mapped attributes; inactive entities are available but not used.',
     detailedMapping: 'Detailed attribute-level mapping from FRIM terms to BLDM entities and attributes. You can modify mappings or propose new attributes.',
     newAttributes: 'New BLDM attributes identified that do not exist in the current model. These can be exported for governance review and model extension.',
   },
-  5: {
+  6: {
     main: 'Check data availability in the F&R Data Delivery Service (DDS) per legal entity. Shows which BLDM entities and attributes are already available in the physical data layer.',
     entityAvailability: 'Data availability per selected legal entity in the DDS. Expand each entity row to see which specific FRIM terms / BLDM attributes are available, partially available, or missing.',
     bldmToPdm: 'The Physical Data Model (PDM) maps BLDM logical entities to physical tables in Databricks Unity Catalog. This shows where each data element is stored.',
     dataProducts: 'DDS Data Products represent packaged, quality-assured data sets. Each product has an SLA, refresh frequency, and Databricks storage path.',
   },
-  6: {
+  7: {
     main: 'Assess data quality per element for all available data items. Traffic-light indicators and dimensional breakdowns show the quality level of each data element against defined thresholds.',
     dqTable: 'Per-element DQ scores grouped by BLDM entity. Each row shows an overall quality score with traffic-light status. Expand rows to see the 5 DQ dimensions: completeness, accuracy, timeliness, consistency, and validity.',
     aiIssues: 'AI-detected data quality issues ranked by severity. Each issue includes affected data elements, root cause analysis, and suggested remediation actions.',
     dashboard: 'Aggregate DQ dashboard showing threshold vs actual scores per dimension, and pass/fail distribution across all assessed data elements.',
   },
-  7: {
+  8: {
     main: 'Identify gaps in DDS data availability and provide remediation suggestions. Shows what data is missing, how to map it into the current DDS structure, and how to import it.',
     gapTable: 'Gap items filtered to new, review-needed, and unmapped requirements. Each gap includes a remediation plan with DDS mapping suggestion, import method, estimated effort, and prerequisites.',
-    ucMatrix: 'Cross-use-case impact matrix showing which gaps affect multiple use cases, enabling prioritisation of remediation efforts.',
   },
-  8: {
+  9: {
     main: 'Based on FRIM, BLDM, and cross-domain knowledge, identify where gap data should be sourced. Toggle between viewing all mappings or only gaps that need sourcing.',
     domainFlow: 'Visual flow diagram showing data movement from source domains to the F&R domain. Highlights which source systems and pipelines provide the required data.',
     mappingTable: 'Detailed source-to-target mapping showing origin system, domain, table, and delivery method for each data element.',
   },
-  9: { main: 'Closing overview with key findings from all 9 process steps. Export complete packages for use case requirements, FRIM additions, BLDM additions, DQ assessments, and gap remediation plans.' },
+  10: { main: 'Closing overview with key findings from all 10 process steps. Export complete packages for use case requirements, FRIM additions, BLDM additions, DQ assessments, and gap remediation plans.' },
 };
 
 // --- Element Expressions (combined FRIM terms per UC) ---

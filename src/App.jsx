@@ -356,13 +356,14 @@ function ConfidenceBadge({ confidence }) {
 const STEP_RACI = {
   1: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Grid Lead', phase: 'Intake' },
   2: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Data Product Owner', phase: 'Intake' },
-  3: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
-  4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
-  5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DDS Data Steward', phase: 'Execution' },
-  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
-  7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
-  8: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
-  9: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Closing' },
+  3: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Data Product Owner', phase: 'Intake' },
+  4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
+  5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
+  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DDS Data Steward', phase: 'Execution' },
+  7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
+  8: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
+  9: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
+  10: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Closing' },
 };
 
 function OwnershipBar({ step, editable, values, onChange }) {
@@ -712,13 +713,14 @@ function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPerson
   const steps = [
     { n: 1, label: 'Business Needs', icon: <ClipboardList size={16} /> },
     { n: 2, label: 'Business Requirements', icon: <Sparkles size={16} /> },
-    { n: 3, label: 'FRIM Mapping', icon: <BookOpen size={16} /> },
-    { n: 4, label: 'BLDM Mapping', icon: <Layers size={16} /> },
-    { n: 5, label: 'DDS Availability', icon: <Database size={16} /> },
-    { n: 6, label: 'DQ Assessment', icon: <Shield size={16} /> },
-    { n: 7, label: 'DDS Gaps', icon: <BarChart3 size={16} /> },
-    { n: 8, label: 'Data Sourcing', icon: <GitBranch size={16} /> },
-    { n: 9, label: 'Closing', icon: <CheckCircle2 size={16} /> },
+    { n: 3, label: 'DQ Requirements', icon: <BarChart3 size={16} /> },
+    { n: 4, label: 'FRIM Mapping', icon: <BookOpen size={16} /> },
+    { n: 5, label: 'BLDM Mapping', icon: <Layers size={16} /> },
+    { n: 6, label: 'DDS Availability', icon: <Database size={16} /> },
+    { n: 7, label: 'DQ Assessment', icon: <Shield size={16} /> },
+    { n: 8, label: 'DDS Gaps', icon: <AlertTriangle size={16} /> },
+    { n: 9, label: 'Data Sourcing', icon: <GitBranch size={16} /> },
+    { n: 10, label: 'Closing', icon: <CheckCircle2 size={16} /> },
   ];
 
   const persona = PERSONAS.find(p => p.id === selectedPersona);
@@ -1439,38 +1441,6 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
     exportToExcel(exportData, 'Requirements', 'step2_requirements.xlsx');
   };
 
-  // --- AI Suggest DQ for All ---
-  const [dqSuggestAll, setDqSuggestAll] = useState(false);
-
-  // --- DQ Dimensions management ---
-  const [dqDimensions, setDqDimensions] = useState([...DQ_DIMENSIONS]);
-  const [showAddDim, setShowAddDim] = useState(false);
-  const [newDimName, setNewDimName] = useState('');
-  const [editingDim, setEditingDim] = useState(null);
-  const [editDimName, setEditDimName] = useState('');
-
-  const addDimension = () => {
-    if (newDimName.trim() && !dqDimensions.includes(newDimName.trim())) {
-      setDqDimensions(prev => [...prev, newDimName.trim()]);
-      setNewDimName('');
-      setShowAddDim(false);
-    }
-  };
-
-  const removeDimension = (dim) => {
-    setDqDimensions(prev => prev.filter(d => d !== dim));
-  };
-
-  const renameDimension = (oldName) => {
-    if (editDimName.trim() && editDimName.trim() !== oldName) {
-      setDqDimensions(prev => prev.map(d => d === oldName ? editDimName.trim() : d));
-    }
-    setEditingDim(null);
-    setEditDimName('');
-  };
-
-  // --- Checked derived items for DQ section ---
-  const checkedItems = allReqs.filter(r => checkedReqs[r.id]);
 
   return (
     <div>
@@ -1692,103 +1662,13 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
             </div>
           </div>
 
-          {/* Section E: Data Quality Definition */}
-          {checkedItems.length > 0 && (
-            <div style={{ ...styles.card, marginTop: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <BarChart3 size={18} color={COLORS.green} />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Data Quality Definition</span>
-                  <InfoTooltip text={STEP_TOOLTIPS[2].dqDefinition} />
-                </div>
-                <button
-                  onClick={() => setDqSuggestAll(true)}
-                  style={{ ...styles.btnSecondary, padding: '6px 14px', fontSize: 12 }}
-                >
-                  <Sparkles size={14} /> AI Suggest DQ for All
-                </button>
-              </div>
-
-              {/* DQ Dimensions Manager */}
-              <div style={{ marginBottom: 16, padding: 14, background: `${COLORS.petrol}06`, borderRadius: 10, border: `1px solid ${COLORS.petrol}15` }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>
-                    DQ Dimensions ({dqDimensions.length})
-                  </div>
-                  <button onClick={() => setShowAddDim(true)} style={{ ...styles.btnSecondary, padding: '4px 10px', fontSize: 11, gap: 4 }}>
-                    <Plus size={12} /> Add Dimension
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {dqDimensions.map(dim => (
-                    <div key={dim} style={{
-                      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8,
-                      background: '#fff', border: `1px solid ${COLORS.lightGrey}40`, fontSize: 12, color: COLORS.darkGreen,
-                    }}>
-                      {editingDim === dim ? (
-                        <input
-                          autoFocus
-                          value={editDimName}
-                          onChange={e => setEditDimName(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') renameDimension(dim); if (e.key === 'Escape') { setEditingDim(null); setEditDimName(''); } }}
-                          onBlur={() => renameDimension(dim)}
-                          style={{ ...styles.input, height: 22, fontSize: 11, padding: '2px 6px', width: 100 }}
-                        />
-                      ) : (
-                        <>
-                          <span style={{ fontWeight: 600 }}>{dim}</span>
-                          <button onClick={() => { setEditingDim(dim); setEditDimName(dim); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }} title="Rename dimension">
-                            <Pencil size={10} color={COLORS.mediumGrey} />
-                          </button>
-                          <button onClick={() => removeDimension(dim)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }} title="Remove dimension">
-                            <X size={12} color={COLORS.red} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {showAddDim && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-                    <input
-                      autoFocus
-                      value={newDimName}
-                      onChange={e => setNewDimName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') addDimension(); if (e.key === 'Escape') { setShowAddDim(false); setNewDimName(''); } }}
-                      placeholder="e.g. Uniqueness, Integrity..."
-                      style={{ ...styles.input, height: 32, fontSize: 12, padding: '4px 10px', flex: 1 }}
-                    />
-                    <button onClick={addDimension} style={{ ...styles.btnPrimary, padding: '6px 12px', fontSize: 11 }}>Add</button>
-                    <button onClick={() => { setShowAddDim(false); setNewDimName(''); }} style={{ ...styles.btnSecondary, padding: '6px 12px', fontSize: 11 }}>Cancel</button>
-                  </div>
-                )}
-              </div>
-
-              <p style={{ fontSize: 13, color: COLORS.mediumGrey, marginBottom: 16, lineHeight: 1.5, ...styles.fontSans }}>
-                Set data quality thresholds for each selected requirement. CDE requirements typically need stricter thresholds.
-              </p>
-              {checkedItems.map(r => {
-                const displayEl = r._isUser ? r.element : getDisplayElement(r);
-                return (
-                  <div key={r.id} style={{ marginBottom: 16, padding: 16, background: `${COLORS.lightGrey}08`, borderRadius: 10, border: `1px solid ${COLORS.lightGrey}18` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{displayEl}</span>
-                      {cdeFlags[r.id] && <span style={styles.badge(`${COLORS.yellow}25`, '#92750a')}>CDE</span>}
-                    </div>
-                    <DQPanel cde={!!cdeFlags[r.id]} domain="Credits" reqId={r.id} dimensions={dqDimensions} />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           {/* Export + Proceed buttons */}
           <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
             <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
               <Download size={14} /> Export to Excel
             </button>
             <button style={styles.btnPrimary} onClick={onNext}>
-              Next: FRIM Mapping <ArrowRight size={16} />
+              Next: DQ Requirements <ArrowRight size={16} />
             </button>
           </div>
         </>
@@ -1815,7 +1695,169 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
 }
 
 // ============================================================
-// Step 3 — Requirements & FRIM Matching (was Step 2)
+// Step 3 — DQ Requirements (extracted from Step 2)
+// ============================================================
+function Step3DQRequirements({ selectedUC, onNext }) {
+  const reqs = REQUIREMENTS[selectedUC] || [];
+
+  // --- DQ Dimensions management ---
+  const [dqDimensions, setDqDimensions] = useState([...DQ_DIMENSIONS]);
+  const [showAddDim, setShowAddDim] = useState(false);
+  const [newDimName, setNewDimName] = useState('');
+  const [editingDim, setEditingDim] = useState(null);
+  const [editDimName, setEditDimName] = useState('');
+  const [dqSuggestAll, setDqSuggestAll] = useState(false);
+
+  const addDimension = () => {
+    if (newDimName.trim() && !dqDimensions.includes(newDimName.trim())) {
+      setDqDimensions(prev => [...prev, newDimName.trim()]);
+      setNewDimName('');
+      setShowAddDim(false);
+    }
+  };
+
+  const removeDimension = (dim) => {
+    setDqDimensions(prev => prev.filter(d => d !== dim));
+  };
+
+  const renameDimension = (oldName) => {
+    if (editDimName.trim() && editDimName.trim() !== oldName) {
+      setDqDimensions(prev => prev.map(d => d === oldName ? editDimName.trim() : d));
+    }
+    setEditingDim(null);
+    setEditDimName('');
+  };
+
+  // Count CDE items
+  const cdeCount = reqs.filter(r => r.cde).length;
+
+  return (
+    <div>
+      <SectionHeader sub={STEP_TOOLTIPS[3]?.main || "Define data quality thresholds per requirement."} tip={STEP_TOOLTIPS[3]?.dqDefinition || "Set DQ thresholds."}>
+        Step 3 — DQ Requirements
+      </SectionHeader>
+      <OwnershipBar step={3} />
+
+      {/* KPI Cards */}
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        <KpiCard label="Requirements" value={reqs.length} color={COLORS.petrol} />
+        <KpiCard label="CDE Items" value={cdeCount} color={COLORS.yellow} />
+        <KpiCard label="DQ Dimensions" value={dqDimensions.length} color={COLORS.green} />
+        <KpiCard label="Thresholds to Set" value={reqs.length * dqDimensions.length} color={COLORS.darkGreen} />
+      </div>
+
+      {/* DQ Dimensions Manager */}
+      <div style={{ ...styles.card }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BarChart3 size={18} color={COLORS.green} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Dimensions</span>
+            <InfoTooltip text={STEP_TOOLTIPS[3]?.dqDimensions || "Manage DQ dimensions."} />
+          </div>
+          <button onClick={() => setShowAddDim(true)} style={{ ...styles.btnSecondary, padding: '6px 14px', fontSize: 12, gap: 4 }}>
+            <Plus size={14} /> Add Dimension
+          </button>
+        </div>
+        <div style={{ padding: 14, background: `${COLORS.petrol}06`, borderRadius: 10, border: `1px solid ${COLORS.petrol}15` }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {dqDimensions.map(dim => (
+              <div key={dim} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8,
+                background: '#fff', border: `1px solid ${COLORS.lightGrey}40`, fontSize: 12, color: COLORS.darkGreen,
+              }}>
+                {editingDim === dim ? (
+                  <input
+                    autoFocus
+                    value={editDimName}
+                    onChange={e => setEditDimName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') renameDimension(dim); if (e.key === 'Escape') { setEditingDim(null); setEditDimName(''); } }}
+                    onBlur={() => renameDimension(dim)}
+                    style={{ ...styles.input, height: 22, fontSize: 11, padding: '2px 6px', width: 100 }}
+                  />
+                ) : (
+                  <>
+                    <span style={{ fontWeight: 600 }}>{dim}</span>
+                    <button onClick={() => { setEditingDim(dim); setEditDimName(dim); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }} title="Rename dimension">
+                      <Pencil size={10} color={COLORS.mediumGrey} />
+                    </button>
+                    <button onClick={() => removeDimension(dim)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }} title="Remove dimension">
+                      <X size={12} color={COLORS.red} />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          {showAddDim && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+              <input
+                autoFocus
+                value={newDimName}
+                onChange={e => setNewDimName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') addDimension(); if (e.key === 'Escape') { setShowAddDim(false); setNewDimName(''); } }}
+                placeholder="e.g. Uniqueness, Integrity..."
+                style={{ ...styles.input, height: 32, fontSize: 12, padding: '4px 10px', flex: 1 }}
+              />
+              <button onClick={addDimension} style={{ ...styles.btnPrimary, padding: '6px 12px', fontSize: 11 }}>Add</button>
+              <button onClick={() => { setShowAddDim(false); setNewDimName(''); }} style={{ ...styles.btnSecondary, padding: '6px 12px', fontSize: 11 }}>Cancel</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Per-Requirement DQ Thresholds */}
+      <div style={{ ...styles.card }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Shield size={18} color={COLORS.petrol} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Thresholds per Requirement</span>
+            <InfoTooltip text={STEP_TOOLTIPS[3]?.dqDefinition || "Set thresholds per requirement."} />
+          </div>
+          <button
+            onClick={() => setDqSuggestAll(true)}
+            style={{ ...styles.btnSecondary, padding: '6px 14px', fontSize: 12 }}
+          >
+            <Sparkles size={14} /> AI Suggest DQ for All
+          </button>
+        </div>
+        <p style={{ fontSize: 13, color: COLORS.mediumGrey, marginBottom: 16, lineHeight: 1.5, ...styles.fontSans }}>
+          Set data quality thresholds for each business requirement. CDE requirements typically need stricter thresholds. Use the AI suggest button for context-aware recommendations.
+        </p>
+        {reqs.map(r => (
+          <div key={r.id} style={{ marginBottom: 16, padding: 16, background: `${COLORS.lightGrey}08`, borderRadius: 10, border: `1px solid ${COLORS.lightGrey}18` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{r.frim || r.element}</span>
+              {r.cde && <span style={styles.badge(`${COLORS.yellow}25`, '#92750a')}>CDE</span>}
+              <span style={{ fontSize: 11, color: COLORS.mediumGrey }}>{r.entity}</span>
+            </div>
+            <DQPanel cde={!!r.cde} domain={r.domain || 'Credits'} reqId={r.id} dimensions={dqDimensions} />
+          </div>
+        ))}
+      </div>
+
+      {/* Export + Next buttons */}
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+        <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => {
+          const data = reqs.map(r => ({
+            'ID': r.id, 'FRIM Term': r.frim || r.element, 'Entity': r.entity, 'CDE': r.cde ? 'Yes' : 'No',
+            'Domain': r.domain || 'Credits',
+          }));
+          exportToExcel(data, 'DQ Requirements', 'step3_dq_requirements.xlsx');
+        }}>
+          <Download size={14} /> Export DQ Requirements
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: FRIM Mapping <ArrowRight size={16} />
+        </button>
+      </div>
+
+      <ReviewPanel step={3} />
+    </div>
+  );
+}
+
+// ============================================================
+// Step 4 — Requirements & FRIM Matching (was Step 3)
 // ============================================================
 function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext, stepLabel }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -1891,10 +1933,10 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[3]?.main || "Map business requirements to FRIM Lexicon terms."} tip={STEP_TOOLTIPS[3]?.frim || "Each data requirement is matched against the FRIM Lexicon. Green = exact match, Yellow = needs review, Red = new term needed."}>
-        Step {stepLabel || '3'} — FRIM Lexicon Mapping
+      <SectionHeader sub={STEP_TOOLTIPS[4]?.main || "Map business requirements to FRIM Lexicon terms."} tip={STEP_TOOLTIPS[4]?.frim || "Each data requirement is matched against the FRIM Lexicon. Green = exact match, Yellow = needs review, Red = new term needed."}>
+        Step {stepLabel || '4'} — FRIM Lexicon Mapping
       </SectionHeader>
-      <OwnershipBar step={3} />
+      <OwnershipBar step={4} />
 
       <div style={{ ...styles.badge(`${COLORS.petrol}15`, COLORS.petrol), marginBottom: 16, padding: '8px 16px', fontSize: 13 }}>
         🤖 AI-assisted — {stats.total} business requirements, {stats.total - stats.unmapped} mapped to FRIM terms, {stats.unmapped} unmapped
@@ -2160,13 +2202,13 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
         )}
       </div>
 
-      <ReviewPanel step={3} />
+      <ReviewPanel step={4} />
     </div>
   );
 }
 
 // ============================================================
-// Step 5 — DDS Availability
+// Step 6 — DDS Availability
 // ============================================================
 function Step5DDSAvailability({ selectedUC, selectedEntities, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -2212,10 +2254,10 @@ function Step5DDSAvailability({ selectedUC, selectedEntities, onNext }) {
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[5]?.main || "Overview of data available in the DDS per legal entity."} tip={STEP_TOOLTIPS[5]?.dds || "Shows which data elements are already available in the DDS."}>
-        Step 5 — DDS Availability
+      <SectionHeader sub={STEP_TOOLTIPS[6]?.main || "Overview of data available in the DDS per legal entity."} tip={STEP_TOOLTIPS[6]?.dds || "Shows which data elements are already available in the DDS."}>
+        Step 6 — DDS Availability
       </SectionHeader>
-      <OwnershipBar step={5} />
+      <OwnershipBar step={6} />
 
       {/* Clickable KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -2411,13 +2453,13 @@ function Step5DDSAvailability({ selectedUC, selectedEntities, onNext }) {
         </button>
       </div>
 
-      <ReviewPanel step={5} />
+      <ReviewPanel step={6} />
     </div>
   );
 }
 
 // ============================================================
-// Step 6 — DQ Assessment (NEW)
+// Step 7 — DQ Assessment
 // ============================================================
 function Step6DQAssessment({ selectedUC, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -2454,10 +2496,10 @@ function Step6DQAssessment({ selectedUC, onNext }) {
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[6]?.main || "Assess data quality per element available in the DDS."} tip="Per-element quality assessment with traffic light indicators.">
-        Step 6 — DQ Assessment
+      <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Assess data quality per element available in the DDS."} tip="Per-element quality assessment with traffic light indicators.">
+        Step 7 — DQ Assessment
       </SectionHeader>
-      <OwnershipBar step={6} />
+      <OwnershipBar step={7} />
 
       {/* KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -2664,13 +2706,13 @@ function Step6DQAssessment({ selectedUC, onNext }) {
         </button>
       </div>
 
-      <ReviewPanel step={6} />
+      <ReviewPanel step={7} />
     </div>
   );
 }
 
 // ============================================================
-// Step 4 — BLDM Mapping (reordered from Step 5)
+// Step 5 — BLDM Mapping
 // ============================================================
 function Step5BLDM({ selectedUC, birdEnabled, onNext, stepNum = 3 }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -2719,7 +2761,7 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext, stepNum = 3 }) {
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[4]?.main || "Map FRIM terms to F&R BLDM entities and attributes."} tip={STEP_TOOLTIPS[4]?.bldm || "Each requirement is mapped to the Business Logical Data Model (BLDM)."}>
+      <SectionHeader sub={STEP_TOOLTIPS[5]?.main || "Map FRIM terms to F&R BLDM entities and attributes."} tip={STEP_TOOLTIPS[5]?.bldm || "Each requirement is mapped to the Business Logical Data Model (BLDM)."}>
         Step {stepNum} — F&R Business Logical Data Model Mapping
       </SectionHeader>
       <OwnershipBar step={stepNum} />
@@ -2901,7 +2943,7 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext, stepNum = 3 }) {
 }
 
 // ============================================================
-// Step 8 — Data Sourcing (was Cross-Domain Sourcing)
+// Step 9 — Data Sourcing
 // ============================================================
 function Step8DataSourcing({ selectedUC, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -2929,9 +2971,9 @@ function Step8DataSourcing({ selectedUC, onNext }) {
   return (
     <div>
       <SectionHeader sub="Based on FRIM, BLDM, and cross-domain knowledge, identify where data should be sourced from across Credits, Consumer, and Markets domains." tip="This step traces each data requirement back to its source system, mapping source domain attributes to the F&R data model.">
-        Step 8 — Data Sourcing
+        Step 9 — Data Sourcing
       </SectionHeader>
-      <OwnershipBar step={8} />
+      <OwnershipBar step={9} />
 
       {/* Gaps toggle */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -3096,13 +3138,13 @@ function Step8DataSourcing({ selectedUC, onNext }) {
         </button>
       </div>
 
-      <ReviewPanel step={8} />
+      <ReviewPanel step={9} />
     </div>
   );
 }
 
 // ============================================================
-// Step 7 — DDS Gaps & Remediation
+// Step 8 — DDS Gaps & Remediation
 // ============================================================
 function Step7DDSGaps({ selectedUC, birdEnabled, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -3131,10 +3173,10 @@ function Step7DDSGaps({ selectedUC, birdEnabled, onNext }) {
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Identify data gaps in DDS coverage with remediation suggestions."} tip="Shows what data is missing and how to add it to the DDS.">
-        Step 7 — DDS Gaps & Remediation
+      <SectionHeader sub={STEP_TOOLTIPS[8]?.main || "Identify data gaps in DDS coverage with remediation suggestions."} tip="Shows what data is missing and how to add it to the DDS.">
+        Step 8 — DDS Gaps & Remediation
       </SectionHeader>
-      <OwnershipBar step={7} />
+      <OwnershipBar step={8} />
 
       {/* KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -3275,74 +3317,6 @@ function Step7DDSGaps({ selectedUC, birdEnabled, onNext }) {
         </div>
       </div>
 
-      {/* Use Case Matrix */}
-      <div style={{ ...styles.card }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Layers size={16} color={COLORS.petrol} /> Use Case Matrix
-              <InfoTooltip text="Shows which FRIM terms are shared across multiple use cases. Shared terms mean one change impacts multiple deliverables." />
-            </div>
-            <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4, ...styles.fontSans }}>Cross-UC dependencies — shared FRIM terms</div>
-          </div>
-          <span style={styles.badge(`${COLORS.petrol}15`, COLORS.petrol)}>
-            {Object.entries(USE_CASE_MATRIX || {}).filter(([, ucs]) => ucs.includes(selectedUC) && ucs.length > 1).length} shared terms
-          </span>
-        </div>
-        {(() => {
-          const sharedTerms = Object.entries(USE_CASE_MATRIX || {})
-            .filter(([, ucs]) => ucs.includes(selectedUC) && ucs.length > 1)
-            .sort((a, b) => b[1].length - a[1].length);
-          if (sharedTerms.length === 0) return <div style={{ fontSize: 13, color: COLORS.mediumGrey, fontStyle: 'italic', padding: 20, textAlign: 'center' }}>No shared terms with other use cases</div>;
-          return (
-            <div style={{ borderRadius: 10, overflow: 'hidden', overflowX: 'auto', border: `1px solid ${COLORS.lightGrey}20` }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>FRIM Term</th>
-                    <th style={styles.th}>Shared With</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>UCs</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>Impact</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sharedTerms.slice(0, 15).map(([term, ucs]) => (
-                    <tr key={term} style={{ transition: 'background 0.15s' }}>
-                      <td style={styles.td}><span style={styles.frimTerm}>{term}</span></td>
-                      <td style={styles.td}>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          {ucs.filter(id => id !== selectedUC).map(id => {
-                            const uc = USE_CASE_LIST.find(u => u.id === id);
-                            return uc ? (
-                              <span key={id} style={{ ...styles.badge(`${COLORS.petrol}10`, COLORS.petrol), fontSize: 10, padding: '2px 8px' }}>
-                                {uc.icon} {uc.label}
-                              </span>
-                            ) : null;
-                          })}
-                        </div>
-                      </td>
-                      <td style={{ ...styles.td, textAlign: 'center' }}>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: ucs.length > 4 ? COLORS.red : ucs.length > 2 ? '#92750a' : COLORS.green }}>{ucs.length}</span>
-                      </td>
-                      <td style={{ ...styles.td, textAlign: 'center' }}>
-                        {ucs.length > 4 ? <span style={styles.badge(`${COLORS.red}15`, COLORS.red)}>High</span>
-                          : ucs.length > 2 ? <span style={styles.badge(`${COLORS.yellow}25`, '#92750a')}>Medium</span>
-                          : <span style={styles.badge(`${COLORS.green}15`, COLORS.green)}>Low</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {sharedTerms.length > 15 && (
-                <div style={{ padding: 12, textAlign: 'center', fontSize: 12, color: COLORS.mediumGrey, borderTop: `1px solid ${COLORS.lightGrey}18` }}>
-                  Showing 15 of {sharedTerms.length} shared terms
-                </div>
-              )}
-            </div>
-          );
-        })()}
-      </div>
-
       {/* Export & Next */}
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
@@ -3364,7 +3338,7 @@ function Step7DDSGaps({ selectedUC, birdEnabled, onNext }) {
         </button>
       </div>
 
-      <ReviewPanel step={7} />
+      <ReviewPanel step={8} />
     </div>
   );
 }
@@ -3372,7 +3346,7 @@ function Step7DDSGaps({ selectedUC, birdEnabled, onNext }) {
 // (Step7DQMonitoring removed — content migrated to Step6DQAssessment)
 
 // ============================================================
-// Step 9 — Closing (simplified from Handoff)
+// Step 10 — Closing
 // ============================================================
 function Step8Closing({ selectedUC }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -3387,6 +3361,7 @@ function Step8Closing({ selectedUC }) {
   const processSteps = [
     { label: 'Business Needs', done: true },
     { label: 'Requirements', done: true },
+    { label: 'DQ Reqs', done: true },
     { label: 'FRIM', done: true },
     { label: 'BLDM', done: true },
     { label: 'DDS Avail', done: true },
@@ -3409,10 +3384,10 @@ function Step8Closing({ selectedUC }) {
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[8]?.main || "Closing overview with key findings and exports."} tip="Final closing step with summary of all process findings.">
-        Step 9 — Closing
+      <SectionHeader sub={STEP_TOOLTIPS[10]?.main || "Closing overview with key findings and exports."} tip="Final closing step with summary of all process findings.">
+        Step 10 — Closing
       </SectionHeader>
-      <OwnershipBar step={9} />
+      <OwnershipBar step={10} />
 
       {/* Process Status */}
       <div style={{ ...styles.card }}>
@@ -3500,7 +3475,7 @@ function Step8Closing({ selectedUC }) {
         </div>
       </div>
 
-      <ReviewPanel step={9} />
+      <ReviewPanel step={10} />
     </div>
   );
 }
@@ -3738,7 +3713,7 @@ function Step8Handoff({ selectedUC }) {
 // ============================================================
 function PortfolioView({ setActiveStep, setSelectedUC }) {
   const statusColors = { 'In Progress': COLORS.yellow, 'Completed': COLORS.green, 'Not Started': COLORS.mediumGrey, 'Blocked': COLORS.red };
-  const stepLabels = ['Business', 'Reqs', 'FRIM', 'BLDM', 'DDS', 'DQ', 'Gaps', 'Source', 'Closing'];
+  const stepLabels = ['Business', 'Reqs', 'DQ', 'FRIM', 'BLDM', 'DDS', 'DQ Assess', 'Gaps', 'Source', 'Closing'];
 
   const ucPortfolio = useMemo(() => {
     return USE_CASE_LIST.map(uc => {
@@ -3881,7 +3856,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
                         <span style={{ fontWeight: 600 }}>{uc.label}</span>
                       </td>
                       <td style={{ ...styles.td, textAlign: 'center' }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.petrol }}>{uc.progress}/9</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.petrol }}>{uc.progress}/10</span>
                       </td>
                       <td style={{ ...styles.td, textAlign: 'center' }}>
                         <span style={{ ...styles.badge(`${statusColors[uc.status]}20`, uc.status === 'In Progress' ? '#92750a' : statusColors[uc.status]), fontSize: 10, fontWeight: 700 }}>
@@ -3916,7 +3891,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
           const data = ucPortfolio.map(uc => ({
-            'Use Case': uc.label, 'Persona': uc.persona?.label, 'Status': uc.status, 'Step': `${uc.progress}/9`,
+            'Use Case': uc.label, 'Persona': uc.persona?.label, 'Status': uc.status, 'Step': `${uc.progress}/10`,
             'Requirements': uc.reqs, 'Matched': uc.stats.exact, 'Review': uc.stats.review, 'New': uc.stats.newR,
             'Coverage': `${uc.coverage}%`,
           }));
@@ -4000,13 +3975,14 @@ export default function App() {
             />
           )}
           {activeStep === 2 && <Step2BusinessNeed selectedUC={selectedUC} onNext={() => setActiveStep(3)} />}
-          {activeStep === 3 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(4)} stepLabel="3" />}
-          {activeStep === 4 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(5)} stepNum={4} />}
-          {activeStep === 5 && <Step5DDSAvailability selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(6)} />}
-          {activeStep === 6 && <Step6DQAssessment selectedUC={selectedUC} onNext={() => setActiveStep(7)} />}
-          {activeStep === 7 && <Step7DDSGaps selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(8)} />}
-          {activeStep === 8 && <Step8DataSourcing selectedUC={selectedUC} onNext={() => setActiveStep(9)} />}
-          {activeStep === 9 && <Step8Closing selectedUC={selectedUC} />}
+          {activeStep === 3 && <Step3DQRequirements selectedUC={selectedUC} onNext={() => setActiveStep(4)} />}
+          {activeStep === 4 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(5)} stepLabel="4" />}
+          {activeStep === 5 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(6)} stepNum={5} />}
+          {activeStep === 6 && <Step5DDSAvailability selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(7)} />}
+          {activeStep === 7 && <Step6DQAssessment selectedUC={selectedUC} onNext={() => setActiveStep(8)} />}
+          {activeStep === 8 && <Step7DDSGaps selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(9)} />}
+          {activeStep === 9 && <Step8DataSourcing selectedUC={selectedUC} onNext={() => setActiveStep(10)} />}
+          {activeStep === 10 && <Step8Closing selectedUC={selectedUC} />}
         </div>
       </div>
     </div>
