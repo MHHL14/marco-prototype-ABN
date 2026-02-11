@@ -803,9 +803,9 @@ function TopBar({ personaLabel, ucLabel, isMobile, onMenuToggle }) {
         )}
         <h1 style={{ ...styles.fontSerif, fontSize: isMobile ? 15 : 18, color: COLORS.darkGreen, margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? 'F&R Intelligence' : 'F&R Data Requirements Intelligence'}</h1>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, fontSize: isMobile ? 11 : 13, color: COLORS.darkGrey, flexShrink: 0 }}>
-        {!isMobile && <User size={16} color={COLORS.mediumGrey} />}
-        <span style={{ fontWeight: 600 }}>{isMobile ? '' : personaLabel}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 10, fontSize: isMobile ? 10 : 13, color: COLORS.darkGrey, flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
+        <User size={isMobile ? 13 : 16} color={COLORS.mediumGrey} style={{ flexShrink: 0 }} />
+        <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{personaLabel}</span>
         {!isMobile && ucLabel && <><span style={{ color: COLORS.lightGrey }}>›</span><span>{ucLabel}</span></>}
       </div>
     </div>
