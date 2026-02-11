@@ -870,79 +870,103 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
       </div>
 
       {intakeMode === 'impact' ? (
-        /* Impact Analysis Mode */
+        /* Impact Analysis Mode — Data Product Change */
         <div>
           <div style={{ ...styles.card }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <AlertTriangle size={18} color={COLORS.yellow} />
-              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Impact Analysis — Source Data Change</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Impact Analysis — Data Product Change</span>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Describe the Source Data Change</label>
-              <textarea style={{ ...styles.input, minHeight: 100, resize: 'vertical', height: 'auto' }} placeholder="e.g. Core Banking System migration from CBS to SAP S/4HANA. Field mappings for credit facility data will change..." value={impactSource} onChange={e => setImpactSource(e.target.value)} />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Affected Systems</label>
+              <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Which source domain data product is changing?</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {IMPACT_ANALYSIS_DATA.systems.map(sys => {
-                  const sel = impactSystems.includes(sys);
+                {IMPACT_ANALYSIS_DATA.sourceDomains.map(dom => {
+                  const sel = impactSystems.includes(dom);
                   return (
-                    <div key={sys} onClick={() => setImpactSystems(prev => prev.includes(sys) ? prev.filter(s => s !== sys) : [...prev, sys])} style={{
-                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                    <div key={dom} onClick={() => setImpactSystems(prev => prev.includes(dom) ? prev.filter(s => s !== dom) : [...prev, dom])} style={{
+                      padding: '8px 18px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700,
                       border: sel ? `2px solid ${COLORS.green}` : `1px solid ${COLORS.lightGrey}40`,
                       background: sel ? `${COLORS.green}08` : '#fff', color: sel ? COLORS.green : COLORS.darkGreen,
                       transition: 'all 0.15s',
-                    }}>{sel && <Check size={10} style={{ marginRight: 4 }} />}{sys}</div>
+                    }}>{sel && <Check size={12} style={{ marginRight: 6 }} />}{dom} Domain</div>
                   );
                 })}
               </div>
             </div>
+            <div>
+              <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Describe the change (optional)</label>
+              <textarea style={{ ...styles.input, minHeight: 80, resize: 'vertical', height: 'auto' }} placeholder="e.g. The 'exposure_class' field in the Credit Facility data product is being split into three separate fields..." value={impactSource} onChange={e => setImpactSource(e.target.value)} />
+            </div>
           </div>
 
           {/* Impact Results */}
-          <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-            <KpiCard label="Use Cases Impacted" value={IMPACT_ANALYSIS_DATA.impactScenarios.reduce((s, sc) => s + sc.affectedUCs.length, 0)} color={COLORS.red} />
-            <KpiCard label="FRIM Terms Affected" value={IMPACT_ANALYSIS_DATA.impactScenarios.reduce((s, sc) => s + sc.affectedFrimTerms.length, 0)} color={COLORS.yellow} />
-            <KpiCard label="DDS Products to Update" value={IMPACT_ANALYSIS_DATA.impactScenarios.reduce((s, sc) => s + sc.affectedDDSProducts.length, 0)} color={COLORS.petrol} />
-          </div>
+          {(() => {
+            const filteredScenarios = impactSystems.length > 0
+              ? IMPACT_ANALYSIS_DATA.impactScenarios.filter(sc => impactSystems.includes(sc.sourceDomain))
+              : IMPACT_ANALYSIS_DATA.impactScenarios;
+            const totalUCs = new Set(filteredScenarios.flatMap(sc => sc.affectedUCs)).size;
+            const totalFrim = new Set(filteredScenarios.flatMap(sc => sc.affectedFrimTerms)).size;
+            const totalDDS = new Set(filteredScenarios.flatMap(sc => sc.affectedDDSProducts)).size;
 
-          {IMPACT_ANALYSIS_DATA.impactScenarios.map(sc => (
-            <div key={sc.id} style={{ ...styles.card, borderLeft: `4px solid ${sc.severity === 'Critical' ? COLORS.red : sc.severity === 'High' ? COLORS.yellow : COLORS.petrol}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{sc.sourceChange}</div>
-                  <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4 }}>{sc.description}</div>
+            return (
+              <>
+                <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+                  <KpiCard label="Data Product Changes" value={filteredScenarios.length} color={COLORS.petrol} />
+                  <KpiCard label="Use Cases Impacted" value={totalUCs} color={COLORS.red} />
+                  <KpiCard label="FRIM Terms Affected" value={totalFrim} color={COLORS.yellow} />
+                  <KpiCard label="DDS Tables to Update" value={totalDDS} color={COLORS.petrol} />
                 </div>
-                <span style={styles.badge(sc.severity === 'Critical' ? `${COLORS.red}15` : sc.severity === 'High' ? `${COLORS.yellow}20` : `${COLORS.petrol}15`, sc.severity === 'Critical' ? COLORS.red : sc.severity === 'High' ? '#92750a' : COLORS.petrol)}>
-                  {sc.severity} — {sc.timeline}
-                </span>
-              </div>
-              <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                <div style={{ background: `${COLORS.red}06`, borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.red, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Affected Use Cases ({sc.affectedUCs.length})</div>
-                  {sc.affectedUCs.map(ucId => {
-                    const ucItem = USE_CASE_LIST.find(u => u.id === ucId);
-                    return ucItem ? <div key={ucId} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0' }}>{ucItem.icon} {ucItem.label}</div> : null;
-                  })}
-                </div>
-                <div style={{ background: `${COLORS.yellow}08`, borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#92750a', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>FRIM Terms ({sc.affectedFrimTerms.length})</div>
-                  {sc.affectedFrimTerms.map(t => <div key={t} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0', ...styles.fontSerif, fontStyle: 'italic' }}>{t}</div>)}
-                </div>
-                <div style={{ background: `${COLORS.petrol}06`, borderRadius: 8, padding: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.petrol, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>DDS Products ({sc.affectedDDSProducts.length})</div>
-                  {sc.affectedDDSProducts.map(p => <div key={p} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0', ...styles.fontMono }}>{p}</div>)}
-                </div>
-              </div>
-            </div>
-          ))}
+
+                {filteredScenarios.map(sc => (
+                  <div key={sc.id} style={{ ...styles.card, borderLeft: `4px solid ${sc.severity === 'Critical' ? COLORS.red : sc.severity === 'High' ? COLORS.yellow : COLORS.petrol}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 200 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                          <span style={styles.badge(`${COLORS.petrol}15`, COLORS.petrol)}>{sc.sourceDomain} Domain</span>
+                          <span style={styles.badge(`${COLORS.lightGrey}20`, COLORS.darkGrey)}>{sc.changeType}</span>
+                          <span style={styles.badge(sc.severity === 'Critical' ? `${COLORS.red}15` : sc.severity === 'High' ? `${COLORS.yellow}20` : `${COLORS.petrol}15`, sc.severity === 'Critical' ? COLORS.red : sc.severity === 'High' ? '#92750a' : COLORS.petrol)}>
+                            {sc.severity}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans, marginBottom: 4 }}>{sc.sourceChange}</div>
+                        <div style={{ fontSize: 11, color: COLORS.mediumGrey, ...styles.fontMono, marginBottom: 8 }}>Data Product: {sc.dataProduct} | {sc.timeline}</div>
+                        <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.6 }}>{sc.description}</div>
+                      </div>
+                    </div>
+                    <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 12 }}>
+                      <div style={{ background: `${COLORS.red}06`, borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.red, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Affected Use Cases ({sc.affectedUCs.length})</div>
+                        {sc.affectedUCs.map(ucId => {
+                          const ucItem = USE_CASE_LIST.find(u => u.id === ucId);
+                          return ucItem ? <div key={ucId} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0' }}>{ucItem.icon} {ucItem.label}</div> : null;
+                        })}
+                      </div>
+                      <div style={{ background: `${COLORS.yellow}08`, borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#92750a', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>FRIM Terms ({sc.affectedFrimTerms.length})</div>
+                        {sc.affectedFrimTerms.map(t => <div key={t} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0', ...styles.fontSerif, fontStyle: 'italic' }}>{t}</div>)}
+                      </div>
+                      <div style={{ background: `${COLORS.petrol}06`, borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.petrol, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>DDS Tables ({sc.affectedDDSProducts.length})</div>
+                        {sc.affectedDDSProducts.map(p => <div key={p} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0', ...styles.fontMono, fontSize: 11 }}>{p}</div>)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
 
           <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
             <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => {
-              const data = IMPACT_ANALYSIS_DATA.impactScenarios.map(sc => ({
-                'Source Change': sc.sourceChange, 'Severity': sc.severity, 'Timeline': sc.timeline,
-                'Affected UCs': sc.affectedUCs.length, 'FRIM Terms': sc.affectedFrimTerms.join(', '),
-                'DDS Products': sc.affectedDDSProducts.join(', '), 'Description': sc.description,
+              const scenarios = impactSystems.length > 0
+                ? IMPACT_ANALYSIS_DATA.impactScenarios.filter(sc => impactSystems.includes(sc.sourceDomain))
+                : IMPACT_ANALYSIS_DATA.impactScenarios;
+              const data = scenarios.map(sc => ({
+                'Source Domain': sc.sourceDomain, 'Data Product': sc.dataProduct, 'Change Type': sc.changeType,
+                'Severity': sc.severity, 'Timeline': sc.timeline, 'Description': sc.description,
+                'Affected UCs': sc.affectedUCs.map(id => USE_CASE_LIST.find(u => u.id === id)?.label).filter(Boolean).join(', '),
+                'FRIM Terms': sc.affectedFrimTerms.join(', '),
+                'DDS Tables': sc.affectedDDSProducts.join(', '),
               }));
               exportToExcel(data, 'Impact Analysis', 'Impact_Analysis.xlsx');
             }}>
