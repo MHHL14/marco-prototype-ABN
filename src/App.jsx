@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   ChevronDown, ChevronRight, ChevronLeft, Check, X, AlertTriangle, Info, Search, Filter,
   FileText, Shield, Database, ArrowRight, ArrowRightLeft, BarChart3, ClipboardList,
@@ -39,6 +39,30 @@ const styles = {
 };
 
 // ============================================================
+// Responsive Hook
+// ============================================================
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    setIsMobile(mq.matches);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+// Responsive style helpers — call with isMobile flag
+const r = {
+  card: (m) => ({ ...styles.card, padding: m ? 16 : 28 }),
+  cardSmall: (m) => ({ ...styles.cardSmall, padding: m ? 12 : 18 }),
+  grid: (m, cols, gap = 14) => ({ display: 'grid', gridTemplateColumns: m ? '1fr' : cols, gap }),
+  grid2: (m, gap = 16) => ({ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr', gap }),
+  contentPad: (m) => m ? 12 : 32,
+};
+
+// ============================================================
 // Export Utility
 // ============================================================
 function exportToExcel(data, sheetName, fileName) {
@@ -71,7 +95,7 @@ function CreateItemModal({ title, fields, onSave, onClose }) {
   const [values, setValues] = useState({});
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 32, width: 560, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 'clamp(16px, 4vw, 32px)', width: '92%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ ...styles.fontSerif, fontSize: 20, color: COLORS.darkGreen, margin: 0 }}>{title}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color={COLORS.mediumGrey} /></button>
@@ -269,7 +293,7 @@ function DQPanel({ cde, domain, reqId, dimensions }) {
           {aiLoading ? 'Analysing…' : 'AI Suggest DQ'}
         </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 8 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: cols, gap: 8 }}>
         {activeDims.map((d) => (
           <div key={d} style={{ background: aiApplied && aiSuggestions[d] ? `${COLORS.petrol}08` : `${COLORS.lightGrey}20`, borderRadius: 8, padding: 10, textAlign: 'center', border: aiApplied && aiSuggestions[d] ? `1px solid ${COLORS.petrol}20` : '1px solid transparent', position: 'relative', cursor: 'pointer', transition: 'all 0.15s' }}>
             <div style={{ fontSize: 16 }}>{dimIcons[d] || '📋'}</div>
@@ -344,7 +368,7 @@ function OwnershipBar({ step, editable, values, onChange }) {
     { key: 'reviewer', label: 'Reviewer', icon: <Eye size={12} />, bg: `${COLORS.yellow}08` },
   ];
   return (
-    <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}30`, fontSize: 12, ...styles.fontSans }}>
+    <div className="r-flex-col" style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}30`, fontSize: 12, ...styles.fontSans }}>
       {roles.map((r, i) => (
         <div key={r.key} style={{ flex: 1, padding: '10px 16px', background: r.bg, borderRight: i < 2 ? `1px solid ${COLORS.lightGrey}20` : 'none' }}>
           <div style={{ color: COLORS.mediumGrey, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>{r.label}</div>
@@ -508,7 +532,7 @@ function GovernancePanel({ items, type, exportMode }) {
       </>}
 
       {/* Items table */}
-      <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}20` }}>
+      <div style={{ borderRadius: 10, overflow: 'hidden', overflowX: 'auto', border: `1px solid ${COLORS.lightGrey}20` }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
@@ -655,8 +679,8 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: `linear-gradient(135deg, ${COLORS.darkGreen}, #003a3c)`, display: 'flex', alignItems: 'center', justifyContent: 'center', ...styles.fontSans }}>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 16, padding: 44, width: 420, boxShadow: '0 12px 48px rgba(0,0,0,0.25)' }}>
+    <div style={{ minHeight: '100vh', background: `linear-gradient(135deg, ${COLORS.darkGreen}, #003a3c)`, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box', ...styles.fontSans }}>
+      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 16, padding: 'clamp(24px, 6vw, 44px)', width: '100%', maxWidth: 420, boxShadow: '0 12px 48px rgba(0,0,0,0.25)', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontSize: 36, fontWeight: 700, color: '#808183', fontFamily: 'Arial, Helvetica, sans-serif', letterSpacing: -1 }}>ABN</span>
           <span style={{ fontSize: 18, color: '#808183', margin: '0 5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>·</span>
@@ -679,7 +703,7 @@ function LoginPage({ onLogin }) {
 // ============================================================
 // Sidebar — 8 Steps, SVG Logo, Modern Spacing
 // ============================================================
-function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPersona, selectedUC, setSelectedUC }) {
+function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPersona, selectedUC, setSelectedUC, isMobile, sidebarOpen, setSidebarOpen }) {
   const steps = [
     { n: 1, label: 'Use Case Intake', icon: <ClipboardList size={16} /> },
     { n: 2, label: 'Business Need & AI', icon: <Sparkles size={16} /> },
@@ -694,66 +718,95 @@ function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPerson
   const persona = PERSONAS.find(p => p.id === selectedPersona);
   const ucOptions = USE_CASE_LIST.filter(uc => uc.personaId === selectedPersona);
 
+  const handleNav = (step) => {
+    setActiveStep(step);
+    if (isMobile) setSidebarOpen(false);
+  };
+
+  // On mobile: overlay sidebar; On desktop: fixed sidebar
+  const sidebarStyle = isMobile
+    ? { width: 280, background: `linear-gradient(180deg, ${COLORS.darkGreen}, #003a3c)`, color: '#fff', position: 'fixed', top: 0, left: sidebarOpen ? 0 : -280, bottom: 0, display: 'flex', flexDirection: 'column', zIndex: 200, transition: 'left 0.3s ease', ...styles.fontSans, boxShadow: sidebarOpen ? '4px 0 20px rgba(0,0,0,0.3)' : 'none' }
+    : { width: 300, background: `linear-gradient(180deg, ${COLORS.darkGreen}, #003a3c)`, color: '#fff', position: 'fixed', top: 0, left: 0, bottom: 0, display: 'flex', flexDirection: 'column', zIndex: 50, ...styles.fontSans };
+
   return (
-    <div style={{ width: 300, background: `linear-gradient(180deg, ${COLORS.darkGreen}, #003a3c)`, color: '#fff', position: 'fixed', top: 0, left: 0, bottom: 0, display: 'flex', flexDirection: 'column', zIndex: 50, ...styles.fontSans }}>
-      <div style={{ padding: '20px 24px 16px' }}>
-        <AbnSidebarLogo />
-        <div style={{ fontSize: 11, color: COLORS.lightGrey, marginTop: 6, textAlign: 'center', letterSpacing: 0.5 }}>Finance & Risk Data Domain</div>
-      </div>
-
-      <div style={{ flex: 1, padding: '8px 12px', overflowY: 'auto' }}>
-        {/* Portfolio View button */}
-        <div onClick={() => setActiveStep(0)} style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', marginBottom: 12,
-          background: activeStep === 0 ? `${COLORS.yellow}30` : `${COLORS.mediumGreen}30`,
-          borderLeft: activeStep === 0 ? `3px solid ${COLORS.yellow}` : '3px solid transparent',
-          transition: 'all 0.15s',
-        }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: activeStep === 0 ? COLORS.yellow : `${COLORS.mediumGreen}60`, color: '#fff', flexShrink: 0 }}>
-            <Eye size={14} />
-          </div>
-          <div style={{ fontSize: 13, fontWeight: activeStep === 0 ? 700 : 600, color: activeStep === 0 ? '#fff' : `${COLORS.lightGrey}dd` }}>Portfolio View</div>
-        </div>
-
-        <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.lightGrey, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, paddingLeft: 8 }}>Process Steps</div>
-        {steps.map((s) => (
-          <div key={s.n} onClick={() => setActiveStep(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', marginBottom: 2, background: activeStep === s.n ? `${COLORS.green}30` : 'transparent', borderLeft: activeStep === s.n ? `3px solid ${COLORS.green}` : '3px solid transparent', transition: 'all 0.15s' }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: activeStep === s.n ? COLORS.green : activeStep > s.n ? `${COLORS.green}60` : `${COLORS.mediumGreen}50`, color: '#fff', flexShrink: 0, transition: 'all 0.2s' }}>
-              {activeStep > s.n ? <Check size={14} /> : s.n}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: activeStep === s.n ? 700 : 400, color: activeStep === s.n ? '#fff' : `${COLORS.lightGrey}cc` }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ padding: '16px 16px', borderTop: `1px solid ${COLORS.mediumGreen}60` }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.lightGrey, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Persona / Grid</div>
-        {persona && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', marginBottom: 10 }}>
-            <span style={{ fontSize: 18 }}>{persona.icon}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{persona.label}</span>
+    <>
+      {/* Mobile overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 199 }} />
+      )}
+      <div style={sidebarStyle}>
+        {/* Close button on mobile */}
+        {isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 12px 0' }}>
+            <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', padding: 4 }}><X size={20} /></button>
           </div>
         )}
-        <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.lightGrey, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Use Case</div>
-        <select value={selectedUC} onChange={e => setSelectedUC(Number(e.target.value))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${COLORS.mediumGreen}60`, background: `${COLORS.mediumGreen}80`, color: '#fff', fontSize: 12, cursor: 'pointer', outline: 'none' }}>
-          {ucOptions.map(uc => <option key={uc.id} value={uc.id}>{uc.icon} {uc.label}</option>)}
-        </select>
+        <div style={{ padding: isMobile ? '8px 24px 16px' : '20px 24px 16px' }}>
+          <AbnSidebarLogo />
+          <div style={{ fontSize: 11, color: COLORS.lightGrey, marginTop: 6, textAlign: 'center', letterSpacing: 0.5 }}>Finance & Risk Data Domain</div>
+        </div>
+
+        <div style={{ flex: 1, padding: '8px 12px', overflowY: 'auto' }}>
+          {/* Portfolio View button */}
+          <div onClick={() => handleNav(0)} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', marginBottom: 12,
+            background: activeStep === 0 ? `${COLORS.yellow}30` : `${COLORS.mediumGreen}30`,
+            borderLeft: activeStep === 0 ? `3px solid ${COLORS.yellow}` : '3px solid transparent',
+            transition: 'all 0.15s',
+          }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: activeStep === 0 ? COLORS.yellow : `${COLORS.mediumGreen}60`, color: '#fff', flexShrink: 0 }}>
+              <Eye size={14} />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: activeStep === 0 ? 700 : 600, color: activeStep === 0 ? '#fff' : `${COLORS.lightGrey}dd` }}>Portfolio View</div>
+          </div>
+
+          <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.lightGrey, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, paddingLeft: 8 }}>Process Steps</div>
+          {steps.map((s) => (
+            <div key={s.n} onClick={() => handleNav(s.n)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', marginBottom: 2, background: activeStep === s.n ? `${COLORS.green}30` : 'transparent', borderLeft: activeStep === s.n ? `3px solid ${COLORS.green}` : '3px solid transparent', transition: 'all 0.15s' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: activeStep === s.n ? COLORS.green : activeStep > s.n ? `${COLORS.green}60` : `${COLORS.mediumGreen}50`, color: '#fff', flexShrink: 0, transition: 'all 0.2s' }}>
+                {activeStep > s.n ? <Check size={14} /> : s.n}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: activeStep === s.n ? 700 : 400, color: activeStep === s.n ? '#fff' : `${COLORS.lightGrey}cc` }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ padding: '16px 16px', borderTop: `1px solid ${COLORS.mediumGreen}60` }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.lightGrey, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Persona / Grid</div>
+          {persona && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', marginBottom: 10 }}>
+              <span style={{ fontSize: 18 }}>{persona.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{persona.label}</span>
+            </div>
+          )}
+          <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.lightGrey, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>Use Case</div>
+          <select value={selectedUC} onChange={e => setSelectedUC(Number(e.target.value))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${COLORS.mediumGreen}60`, background: `${COLORS.mediumGreen}80`, color: '#fff', fontSize: 12, cursor: 'pointer', outline: 'none' }}>
+            {ucOptions.map(uc => <option key={uc.id} value={uc.id}>{uc.icon} {uc.label}</option>)}
+          </select>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 // ============================================================
 // Top Bar
 // ============================================================
-function TopBar({ personaLabel, ucLabel }) {
+function TopBar({ personaLabel, ucLabel, isMobile, onMenuToggle }) {
   return (
-    <div style={{ background: '#fff', borderBottom: `1px solid ${COLORS.lightGrey}20`, padding: '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...styles.fontSans, boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-      <h1 style={{ ...styles.fontSerif, fontSize: 18, color: COLORS.darkGreen, margin: 0, fontWeight: 700 }}>F&R Data Requirements Intelligence</h1>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: COLORS.darkGrey }}>
-        <User size={16} color={COLORS.mediumGrey} />
+    <div style={{ background: '#fff', borderBottom: `1px solid ${COLORS.lightGrey}20`, padding: isMobile ? '10px 12px' : '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...styles.fontSans, boxShadow: '0 1px 4px rgba(0,0,0,0.03)', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {isMobile && (
+          <button onClick={onMenuToggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={COLORS.darkGreen} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        )}
+        <h1 style={{ ...styles.fontSerif, fontSize: isMobile ? 14 : 18, color: COLORS.darkGreen, margin: 0, fontWeight: 700, whiteSpace: 'nowrap' }}>{isMobile ? 'F&R Intelligence' : 'F&R Data Requirements Intelligence'}</h1>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, fontSize: isMobile ? 11 : 13, color: COLORS.darkGrey, flexShrink: 0 }}>
+        <User size={isMobile ? 14 : 16} color={COLORS.mediumGrey} />
         <span style={{ fontWeight: 600 }}>{personaLabel}</span>
-        {ucLabel && <><span style={{ color: COLORS.lightGrey }}>›</span><span>{ucLabel}</span></>}
+        {!isMobile && ucLabel && <><span style={{ color: COLORS.lightGrey }}>›</span><span>{ucLabel}</span></>}
       </div>
     </div>
   );
@@ -792,7 +845,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Select Persona / Grid</span>
           <InfoTooltip text="A Persona represents your organisational grid or team (e.g. Financial Risk Grid, Reporting Grid). Select the grid you belong to — this determines which use cases are available." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
           {PERSONAS.map(p => {
             const sel = selectedPersona === p.id;
             const ucCount = USE_CASE_LIST.filter(u => u.personaId === p.id).length;
@@ -822,7 +875,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <span style={{ fontSize: 12, color: COLORS.mediumGrey }}>— within {PERSONAS.find(p => p.id === selectedPersona)?.label}</span>
           <InfoTooltip text="Choose an existing use case or create a new one. Each use case represents a specific data need (e.g. a regulatory calculation, a report, or a model) within your grid." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(ucOptions.length + 1, 3)}, 1fr)`, gap: 12 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(ucOptions.length + 1, 3)}, 1fr)`, gap: 12 }}>
           {ucOptions.map(u => {
             const sel = selectedUC === u.id;
             return (
@@ -867,7 +920,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
       {/* Add Use Case Modal */}
       {showAddUC && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowAddUC(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 32, width: 560, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 'clamp(16px, 4vw, 32px)', width: '92%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ ...styles.fontSerif, fontSize: 20, color: COLORS.darkGreen, margin: 0 }}>New Use Case — {PERSONAS.find(p => p.id === selectedPersona)?.label}</h3>
               <button onClick={() => setShowAddUC(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={20} color={COLORS.mediumGrey} /></button>
@@ -885,7 +938,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
                 <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Description *</label>
                 <textarea style={{ ...styles.input, minHeight: 90, resize: 'vertical', height: 'auto' }} placeholder="Describe the data need, what calculation or report it supports, and which data elements are required..." value={newUC.description} onChange={e => setNewUC({ ...newUC, description: e.target.value })} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Frequency</label>
                   <select style={{ ...styles.input, cursor: 'pointer' }} value={newUC.frequency} onChange={e => setNewUC({ ...newUC, frequency: e.target.value })}>
@@ -916,7 +969,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Use Case Details</span>
           <InfoTooltip text="These details are pre-populated based on the selected use case. They define the scope, frequency, priority, and regulatory deadline for this data request." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Use Case Name</label>
             <input style={styles.input} value={uc.name} readOnly />
@@ -967,7 +1020,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <span style={{ color: COLORS.green, fontWeight: 600 }}>{epics.find(e => e.id === selEpic)?.label || '—'}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           <div>
             <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Saga</label>
             <select style={{ ...styles.input, cursor: 'pointer' }} value={selSaga} onChange={e => {
@@ -1006,7 +1059,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Entity Scope — Select applicable legal entities</span>
           <InfoTooltip text="Select the legal entities for which this data request applies. The entity scope determines DDS data availability and sourcing requirements per entity." />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {LEGAL_ENTITIES.map(le => {
             const sel = selectedEntities.includes(le.id);
             return (
@@ -1041,7 +1094,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
           <InfoTooltip text="The selected regulations and policies determine which documents the system uses to derive data requirements, generate FRIM-compliant definitions, and establish regulatory traceability." />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           <div style={{ background: `${COLORS.lightGrey}10`, borderRadius: 10, padding: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 8, display: 'flex', justifyContent: 'space-between', ...styles.fontSans }}>
               <span>Regulations & Frameworks</span>
@@ -1109,7 +1162,7 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
 
       <ReviewPanel step={1} />
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => exportToExcel([{ 'Use Case': uc.name, 'Driver': uc.driver, 'Frequency': uc.frequency, 'Priority': uc.priority, 'Deadline': uc.deadline, 'Target Report': uc.target, 'Entities': selectedEntities.join(', '), 'Regulations': selectedRegs.join(', ') }], 'UC Intake', `step1_intake.xlsx`)}>
           <Download size={14} /> Export to Excel
         </button>
@@ -1567,7 +1620,7 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
           )}
 
           {/* Export + Proceed buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
+          <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
             <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
               <Download size={14} /> Export to Excel
             </button>
@@ -1680,7 +1733,7 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled }) {
       </div>
 
       {/* Clickable KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
         <KpiCard label="Exact Match" value={stats.exact} color={COLORS.green} active={kpiFilter === 'exact'} onClick={() => handleKpiClick('exact')} />
         <KpiCard label="Review" value={stats.review} color={COLORS.yellow} active={kpiFilter === 'review'} onClick={() => handleKpiClick('review')} />
         <KpiCard label="New Terms" value={stats.newR} color={COLORS.red} active={kpiFilter === 'new'} onClick={() => handleKpiClick('new')} />
@@ -1888,7 +1941,7 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled }) {
       })()}
 
       {/* Export Button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export FRIM Mapping
         </button>
@@ -1952,7 +2005,7 @@ function Step4DDS({ selectedUC, selectedEntities }) {
       <OwnershipBar step={5} />
 
       {/* Clickable KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         <KpiCard label="Available in DDS" value={totals.avail} color={COLORS.green} active={kpiFilter === 'avail'} onClick={() => setKpiFilter(kpiFilter === 'avail' ? null : 'avail')} />
         <KpiCard label="Partially Available" value={totals.partial} color={COLORS.yellow} active={kpiFilter === 'partial'} onClick={() => setKpiFilter(kpiFilter === 'partial' ? null : 'partial')} />
         <KpiCard label="Not in DDS" value={totals.unavail} color={COLORS.red} active={kpiFilter === 'unavail'} onClick={() => setKpiFilter(kpiFilter === 'unavail' ? null : 'unavail')} />
@@ -2012,7 +2065,7 @@ function Step4DDS({ selectedUC, selectedEntities }) {
                     {isExpanded && (
                       <tr>
                         <td colSpan={6} style={{ padding: '0 20px 16px', background: `${COLORS.green}04` }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, paddingTop: 12 }}>
+                          <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, paddingTop: 12 }}>
                             <div style={{ background: '#fff', borderRadius: 10, padding: 14, border: `1px solid ${COLORS.green}25` }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.green, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Available ({Object.values(entityFrimAvailability).reduce((s, e) => s + e.available.length, 0)})</div>
                               {Object.entries(entityFrimAvailability).map(([ent, data]) => data.available.map(term => (
@@ -2056,7 +2109,7 @@ function Step4DDS({ selectedUC, selectedEntities }) {
           BLDM → PDM Connection
         </div>
         <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginBottom: 16 }}>Physical Data Model mapping — where data lives in Databricks Unity Catalog</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, alignItems: 'start' }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, alignItems: 'start' }}>
           {/* Left: BLDM Entities */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.mediumGrey, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingLeft: 8 }}>BLDM (Logical)</div>
@@ -2096,7 +2149,7 @@ function Step4DDS({ selectedUC, selectedEntities }) {
           <Package size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
           DDS Data Products
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
           {DDS_DATA_PRODUCTS.map((dp, i) => (
             <div key={i} style={{ borderRadius: 12, border: `1px solid ${COLORS.lightGrey}30`, overflow: 'hidden', transition: 'box-shadow 0.2s', cursor: 'pointer' }} onClick={() => setExpandedProduct(expandedProduct === i ? null : i)}>
               <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: expandedProduct === i ? `${COLORS.green}06` : '#fff' }}>
@@ -2136,7 +2189,7 @@ function Step4DDS({ selectedUC, selectedEntities }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export DDS Availability
         </button>
@@ -2202,7 +2255,7 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
       </SectionHeader>
       <OwnershipBar step={4} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         <KpiCard label="Entities Affected" value={`${entitiesAffected}/8`} color={COLORS.green} />
         <KpiCard label="Attributes Mapped" value={reqs.length} color={COLORS.green} />
         <KpiCard label="New Attributes" value={newAttrs} color={COLORS.red} />
@@ -2211,7 +2264,7 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
 
       <div style={{ ...styles.card }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Entity-Relationship Overview</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
           {activeEntities.map(e => (
             <div key={e.name} style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}30`, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
               <div style={{ background: COLORS.darkGreen, color: '#fff', padding: '10px 14px', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, ...styles.fontSans }}>
@@ -2242,6 +2295,7 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
       {birdEnabled && (
         <div style={{ ...styles.card }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.petrol, marginBottom: 12, ...styles.fontSans }}>🐦 BIRD LDM Entity Alignment</div>
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -2264,6 +2318,7 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -2362,7 +2417,7 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
       })()}
 
       {/* Export Button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export BLDM Mapping
         </button>
@@ -2540,7 +2595,7 @@ function Step6Origination({ selectedUC }) {
       </div>
 
       {/* Export & Create buttons */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => alert('Add Source Mapping modal — coming soon')}>
           <Plus size={14} /> Add Source Mapping
         </button>
@@ -2598,7 +2653,7 @@ function Step7Gap({ selectedUC, birdEnabled }) {
       <OwnershipBar step={7} />
 
       {/* Clickable KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: birdEnabled ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: birdEnabled ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
         <KpiCard label="Available in F&R DDS" value={stats.exact} color={COLORS.green} active={kpiFilter === 'available'} onClick={() => setKpiFilter(kpiFilter === 'available' ? null : 'available')} />
         <KpiCard label="Review Needed" value={stats.review} color={COLORS.yellow} active={kpiFilter === 'review'} onClick={() => setKpiFilter(kpiFilter === 'review' ? null : 'review')} />
         <KpiCard label="New Sourcing Required" value={stats.newR} color={COLORS.red} active={kpiFilter === 'new'} onClick={() => setKpiFilter(kpiFilter === 'new' ? null : 'new')} />
@@ -2607,7 +2662,7 @@ function Step7Gap({ selectedUC, birdEnabled }) {
         {birdEnabled && <KpiCard label="BIRD Alignment" value={stats.birdTotal > 0 ? `${Math.round(stats.birdAligned / stats.birdTotal * 100)}%` : '0%'} color={COLORS.petrol} />}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 20 }}>
+      <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 20 }}>
         <div style={{ ...styles.card }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Breakdown by Source Domain</div>
           <ResponsiveContainer width="100%" height={250}>
@@ -2638,7 +2693,7 @@ function Step7Gap({ selectedUC, birdEnabled }) {
 
       <div style={{ ...styles.card }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>🔶 CDE Impact Panel</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
             { label: 'Total CDE Candidates', value: stats.cdes, bg: `${COLORS.yellow}0c` },
             { label: 'Already Registered', value: stats.cdes - stats.newCdes, bg: `${COLORS.green}08` },
@@ -2655,7 +2710,7 @@ function Step7Gap({ selectedUC, birdEnabled }) {
 
       <div style={{ ...styles.card }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>📊 DQ Readiness Panel</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
             { label: 'Meeting Thresholds', value: `${stats.exact}/${stats.total}`, color: COLORS.green },
             { label: 'Completeness Risks', value: stats.newR, color: COLORS.red },
@@ -2725,7 +2780,7 @@ function Step7Gap({ selectedUC, birdEnabled }) {
             .sort((a, b) => b[1].length - a[1].length);
           if (sharedTerms.length === 0) return <div style={{ fontSize: 13, color: COLORS.mediumGrey, fontStyle: 'italic', padding: 20, textAlign: 'center' }}>No shared terms with other use cases</div>;
           return (
-            <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}20` }}>
+            <div style={{ borderRadius: 10, overflow: 'hidden', overflowX: 'auto', border: `1px solid ${COLORS.lightGrey}20` }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
@@ -2774,7 +2829,7 @@ function Step7Gap({ selectedUC, birdEnabled }) {
       </div>
 
       {/* Export & Create buttons */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => alert('Add Gap Item modal — coming soon')}>
           <Plus size={14} /> Add Gap Item
         </button>
@@ -2865,7 +2920,7 @@ function Step8Handoff({ selectedUC }) {
 
       <div style={{ ...styles.card, borderLeft: `4px solid ${COLORS.green}` }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>FRIM Update Summary</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+        <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
           {[
             { label: 'New Lexicon Terms', value: stats.newR },
             { label: 'Modified Definitions', value: stats.review },
@@ -2894,7 +2949,7 @@ function Step8Handoff({ selectedUC }) {
           </div>
           <span style={styles.badge(`${COLORS.petrol}15`, COLORS.petrol)}>{dataProducts.length} products</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: dataProducts.length > 2 ? 'repeat(3, 1fr)' : `repeat(${dataProducts.length}, 1fr)`, gap: 14 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: dataProducts.length > 2 ? 'repeat(3, 1fr)' : `repeat(${dataProducts.length}, 1fr)`, gap: 14 }}>
           {dataProducts.map((dp, i) => (
             <div key={i} style={{ borderRadius: 12, border: `1px solid ${COLORS.lightGrey}30`, overflow: 'hidden', transition: 'box-shadow 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
               <div style={{ background: `${COLORS.petrol}10`, padding: '12px 16px', borderBottom: `1px solid ${COLORS.lightGrey}20` }}>
@@ -3065,7 +3120,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
       </SectionHeader>
 
       {/* Summary KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
         <KpiCard label="Total Use Cases" value={totalUCs} color={COLORS.petrol} />
         <KpiCard label="Completed" value={completed} color={COLORS.green} />
         <KpiCard label="In Progress" value={inProgress} color={COLORS.yellow} />
@@ -3079,7 +3134,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
           <Eye size={16} style={{ verticalAlign: 'middle', marginRight: 8 }} />
           Use Case Status Overview
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280, 1fr))', gap: 14 }}>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {ucPortfolio.map(uc => (
             <div key={uc.id} onClick={() => { setSelectedUC(uc.id); setActiveStep(1); }} style={{
               borderRadius: 14, border: `1px solid ${COLORS.lightGrey}30`, overflow: 'hidden', cursor: 'pointer',
@@ -3203,7 +3258,7 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
       </div>
 
       {/* Export */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
           const data = ucPortfolio.map(uc => ({
             'Use Case': uc.label, 'Persona': uc.persona?.label, 'Status': uc.status, 'Step': `${uc.progress}/8`,
@@ -3223,8 +3278,10 @@ function PortfolioView({ setActiveStep, setSelectedUC }) {
 // Main App
 // ============================================================
 export default function App() {
+  const isMobile = useIsMobile();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState('fin_risk');
   const [selectedUC, setSelectedUC] = useState(1);
   const [selectedRegs, setSelectedRegs] = useState(UC_PRESELECTIONS[1].regs);
@@ -3271,10 +3328,10 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: COLORS.bg, ...styles.fontSans }}>
-      <Sidebar activeStep={activeStep} setActiveStep={setActiveStep} selectedPersona={selectedPersona} setSelectedPersona={handlePersonaChange} selectedUC={selectedUC} setSelectedUC={handleUCChange} />
-      <div style={{ marginLeft: 300, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <TopBar personaLabel={personaObj?.label || ''} ucLabel={ucObj?.label || ''} />
-        <div style={{ flex: 1, padding: 32, overflowY: 'auto' }}>
+      <Sidebar activeStep={activeStep} setActiveStep={setActiveStep} selectedPersona={selectedPersona} setSelectedPersona={handlePersonaChange} selectedUC={selectedUC} setSelectedUC={handleUCChange} isMobile={isMobile} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div style={{ marginLeft: isMobile ? 0 : 300, flex: 1, display: 'flex', flexDirection: 'column', width: isMobile ? '100%' : undefined }}>
+        <TopBar personaLabel={personaObj?.label || ''} ucLabel={ucObj?.label || ''} isMobile={isMobile} onMenuToggle={() => setSidebarOpen(true)} />
+        <div style={{ flex: 1, padding: isMobile ? 10 : 32, overflowY: 'auto' }}>
           {activeStep === 0 && <PortfolioView setActiveStep={setActiveStep} setSelectedUC={handleUCChange} />}
           {activeStep === 1 && (
             <Step1

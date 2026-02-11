@@ -7,6 +7,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Georgia&display=swap" rel="stylesheet">
+    <style>
+      /* Mobile responsive overrides */
+      @media (max-width: 767px) {
+        /* Force multi-column grids to stack */
+        .r-grid { grid-template-columns: 1fr !important; }
+        /* KPI grids: 2 columns on mobile */
+        .r-kpi { grid-template-columns: repeat(2, 1fr) !important; }
+        /* Tables: smaller font, ensure scroll */
+        table { font-size: 12px; }
+        th, td { padding: 8px 6px !important; }
+        /* Prevent horizontal page overflow */
+        #root, body { overflow-x: hidden; max-width: 100vw; }
+        /* Buttons: wrap on mobile */
+        .r-btn-row { flex-wrap: wrap !important; }
+        .r-btn-row > button { flex: 1 1 auto; min-width: 120px; font-size: 12px !important; }
+        /* Flex rows that should stack */
+        .r-flex-col { flex-direction: column !important; }
+      }
+      @media (min-width: 768px) and (max-width: 1024px) {
+        .r-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        .r-kpi { grid-template-columns: repeat(3, 1fr) !important; }
+      }
+    </style>
   </head>
   <body style="margin:0;padding:0;background:#f0f2f0;">
     <div id="root"></div>
