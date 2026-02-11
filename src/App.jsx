@@ -1654,7 +1654,7 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
 // ============================================================
 // Step 3 — Requirements & FRIM Matching (was Step 2)
 // ============================================================
-function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled }) {
+function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const stats = useMemo(() => getStats(reqs), [reqs]);
   const expressions = ELEMENT_EXPRESSIONS[selectedUC] || [];
@@ -1940,10 +1940,13 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled }) {
         return newTerms.length > 0 ? <GovernancePanel items={newTerms} type="frim" exportMode={true} /> : null;
       })()}
 
-      {/* Export Button */}
+      {/* Export & Next buttons */}
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export FRIM Mapping
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: BLDM Mapping <ArrowRight size={16} />
         </button>
       </div>
 
@@ -1955,7 +1958,7 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled }) {
 // ============================================================
 // Step 5 — DDS Availability (reordered from Step 4)
 // ============================================================
-function Step4DDS({ selectedUC, selectedEntities }) {
+function Step4DDS({ selectedUC, selectedEntities, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const ddsData = DDS_AVAILABILITY[selectedUC] || {};
   const activeEntities = LEGAL_ENTITIES.filter(le => selectedEntities.includes(le.id));
@@ -2190,8 +2193,11 @@ function Step4DDS({ selectedUC, selectedEntities }) {
       </div>
 
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export DDS Availability
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: Data Origination <ArrowRight size={16} />
         </button>
       </div>
 
@@ -2203,7 +2209,7 @@ function Step4DDS({ selectedUC, selectedEntities }) {
 // ============================================================
 // Step 4 — BLDM Mapping (reordered from Step 5)
 // ============================================================
-function Step5BLDM({ selectedUC, birdEnabled }) {
+function Step5BLDM({ selectedUC, birdEnabled, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const [editingMapping, setEditingMapping] = useState(null);
   const [mappingOverrides, setMappingOverrides] = useState({});
@@ -2416,10 +2422,13 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
         return newAttrsItems.length > 0 ? <GovernancePanel items={newAttrsItems} type="bldm" exportMode /> : null;
       })()}
 
-      {/* Export Button */}
+      {/* Export & Next buttons */}
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export BLDM Mapping
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: DDS Availability <ArrowRight size={16} />
         </button>
       </div>
 
@@ -2431,7 +2440,7 @@ function Step5BLDM({ selectedUC, birdEnabled }) {
 // ============================================================
 // Step 6 — Data Origination (was Step 4)
 // ============================================================
-function Step6Origination({ selectedUC }) {
+function Step6Origination({ selectedUC, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const [activeTab, setActiveTab] = useState('Credits');
   const mappings = SOURCE_MAPPINGS[selectedUC] || SOURCE_MAPPINGS[1];
@@ -2594,16 +2603,19 @@ function Step6Origination({ selectedUC }) {
         </div>
       </div>
 
-      {/* Export & Create buttons */}
+      {/* Export, Create & Next buttons */}
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => alert('Add Source Mapping modal — coming soon')}>
           <Plus size={14} /> Add Source Mapping
         </button>
-        <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
           const data = tabMappings.map(m => ({ 'Source': m.src, 'Source Attr': m.srcAttr, 'F&R Entity': m.frEntity, 'F&R Attr': m.frAttr, 'Status': m.status, 'Note': m.note || '' }));
           exportToExcel(data, 'Source Mapping', `Source_Mapping_UC${selectedUC}.xlsx`);
         }}>
           <Download size={14} /> Export Source Mapping
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: Gap Analysis <ArrowRight size={16} />
         </button>
       </div>
 
@@ -2615,7 +2627,7 @@ function Step6Origination({ selectedUC }) {
 // ============================================================
 // Step 7 — Gap Analysis (was Step 5)
 // ============================================================
-function Step7Gap({ selectedUC, birdEnabled }) {
+function Step7Gap({ selectedUC, birdEnabled, onNext }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const stats = useMemo(() => getStats(reqs), [reqs]);
   const [kpiFilter, setKpiFilter] = useState(null);
@@ -2828,12 +2840,12 @@ function Step7Gap({ selectedUC, birdEnabled }) {
         })()}
       </div>
 
-      {/* Export & Create buttons */}
+      {/* Export, Create & Next buttons */}
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => alert('Add Gap Item modal — coming soon')}>
           <Plus size={14} /> Add Gap Item
         </button>
-        <button style={{ ...styles.btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
           const data = reqs.filter(r => r.match !== 'exact').map(r => ({
             'ID': r.id, 'FRIM Term': r.frim, 'Status': r.match, 'CDE': r.cde ? 'Yes' : 'No',
             'Gap Type': r.match === 'new' ? 'New attribute + sourcing' : 'Definition alignment',
@@ -2842,6 +2854,9 @@ function Step7Gap({ selectedUC, birdEnabled }) {
           exportToExcel(data, 'Gap Analysis', `Gap_Analysis_UC${selectedUC}.xlsx`);
         }}>
           <Download size={14} /> Export Gap Analysis
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: Handoff & Actions <ArrowRight size={16} />
         </button>
       </div>
 
@@ -3345,11 +3360,11 @@ export default function App() {
             />
           )}
           {activeStep === 2 && <Step2BusinessNeed selectedUC={selectedUC} onNext={() => setActiveStep(3)} />}
-          {activeStep === 3 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} />}
-          {activeStep === 4 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} />}
-          {activeStep === 5 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} />}
-          {activeStep === 6 && <Step6Origination selectedUC={selectedUC} />}
-          {activeStep === 7 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} />}
+          {activeStep === 3 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(4)} />}
+          {activeStep === 4 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(5)} />}
+          {activeStep === 5 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(6)} />}
+          {activeStep === 6 && <Step6Origination selectedUC={selectedUC} onNext={() => setActiveStep(7)} />}
+          {activeStep === 7 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(8)} />}
           {activeStep === 8 && <Step8Handoff selectedUC={selectedUC} />}
         </div>
       </div>
