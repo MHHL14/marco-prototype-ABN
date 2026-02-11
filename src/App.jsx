@@ -734,7 +734,7 @@ function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPerson
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 199 }} />
       )}
-      <div style={sidebarStyle}>
+      <div className={`r-sidebar${sidebarOpen ? ' open' : ''}`} style={sidebarStyle}>
         {/* Close button on mobile */}
         {isMobile && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 12px 0' }}>
@@ -3329,9 +3329,9 @@ export default function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: COLORS.bg, ...styles.fontSans }}>
       <Sidebar activeStep={activeStep} setActiveStep={setActiveStep} selectedPersona={selectedPersona} setSelectedPersona={handlePersonaChange} selectedUC={selectedUC} setSelectedUC={handleUCChange} isMobile={isMobile} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div style={{ marginLeft: isMobile ? 0 : 300, flex: 1, display: 'flex', flexDirection: 'column', width: isMobile ? '100%' : undefined }}>
+      <div className="r-content" style={{ marginLeft: isMobile ? 0 : 300, flex: 1, display: 'flex', flexDirection: 'column', width: isMobile ? '100%' : undefined }}>
         <TopBar personaLabel={personaObj?.label || ''} ucLabel={ucObj?.label || ''} isMobile={isMobile} onMenuToggle={() => setSidebarOpen(true)} />
-        <div style={{ flex: 1, padding: isMobile ? 10 : 32, overflowY: 'auto' }}>
+        <div className="r-content-inner" style={{ flex: 1, padding: isMobile ? 10 : 32, overflowY: 'auto' }}>
           {activeStep === 0 && <PortfolioView setActiveStep={setActiveStep} setSelectedUC={handleUCChange} />}
           {activeStep === 1 && (
             <Step1
