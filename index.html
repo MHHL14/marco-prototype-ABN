@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
     <title>F&R Data Requirements Intelligence — ABN AMRO</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,13 +23,13 @@
         .r-flex-col { flex-direction: column !important; }
         .r-sidebar { left: -280px; }
         .r-sidebar.open { left: 0 !important; }
-        .r-content { margin-left: 0 !important; width: 100% !important; box-sizing: border-box !important; }
-        .r-content-inner { padding: 14px !important; box-sizing: border-box !important; }
-        /* Ensure headings and text don't clip */
-        h2 { font-size: 18px !important; word-wrap: break-word !important; }
-        p { word-wrap: break-word !important; }
-        /* Cards need proper box-sizing */
-        .r-content-inner > div { box-sizing: border-box !important; max-width: 100% !important; }
+        .r-content { margin-left: 0 !important; width: 100% !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+        .r-content-inner { padding: 14px !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+        /* Ensure headings and text wrap */
+        h2 { font-size: 18px !important; overflow-wrap: break-word !important; }
+        p { overflow-wrap: break-word !important; }
+        /* Cards and direct children stay in bounds */
+        .r-content-inner > div { max-width: 100% !important; overflow-x: hidden !important; }
       }
       /* ===== Tablet (768–1024px) ===== */
       @media (min-width: 768px) and (max-width: 1024px) {
