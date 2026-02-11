@@ -15,7 +15,9 @@ import {
   LEGAL_ENTITIES, ENTITY_PRESELECTIONS, BUSINESS_NEED_EXAMPLES, DERIVED_REQUIREMENTS,
   DDS_AVAILABILITY, DDS_DATA_PRODUCTS, CHANGE_INITIATIVE, CHANGE_PRESELECTIONS,
   GOVERNANCE_STATUSES, DQ_DIMENSIONS, DQ_AI_SUGGESTIONS, USE_CASE_MATRIX,
-  STEP_TOOLTIPS, ELEMENT_EXPRESSIONS, FRIM_MAPPING_RATIONALES, PDM_MAPPING
+  STEP_TOOLTIPS, ELEMENT_EXPRESSIONS, FRIM_MAPPING_RATIONALES, PDM_MAPPING,
+  BUSINESS_REQUIREMENTS_TEXT, DQ_REQUIREMENTS_TEXT, DEFINITION_REASONING,
+  AI_SUGGESTED_PDM, DQ_ACTUALS, DQ_AI_ISSUES, IMPACT_ANALYSIS_DATA
 } from './data.js';
 
 // ============================================================
@@ -351,13 +353,13 @@ function ConfidenceBadge({ confidence }) {
 // --- RACI Ownership Bar ---
 const STEP_RACI = {
   1: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Grid Lead', phase: 'Intake' },
-  2: { responsible: 'Use Case Owner', accountable: 'Use Case Owner', reviewer: 'Data Product Owner', phase: 'Intake' },
-  3: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
-  4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
+  2: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'FRIM Lexicon Expert', phase: 'Execution' },
+  3: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'BLDM Modeller', phase: 'Execution' },
+  4: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
   5: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Data Steward', phase: 'Execution' },
-  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Domain Contact', phase: 'Execution' },
-  7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
-  8: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Handoff' },
+  6: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'Data Governance Lead', phase: 'Execution' },
+  7: { responsible: 'Requirements & Modelling Team', accountable: 'Data Product Owner', reviewer: 'DQ Steward', phase: 'Execution' },
+  8: { responsible: 'Data Product Owner', accountable: 'Data Product Owner', reviewer: 'Grid Lead', phase: 'Closing' },
 };
 
 function OwnershipBar({ step, editable, values, onChange }) {
@@ -705,14 +707,14 @@ function LoginPage({ onLogin }) {
 // ============================================================
 function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPersona, selectedUC, setSelectedUC, isMobile, sidebarOpen, setSidebarOpen }) {
   const steps = [
-    { n: 1, label: 'Use Case Intake', icon: <ClipboardList size={16} /> },
-    { n: 2, label: 'Business Need & AI', icon: <Sparkles size={16} /> },
-    { n: 3, label: 'FRIM Mapping', icon: <BookOpen size={16} /> },
-    { n: 4, label: 'BLDM Mapping', icon: <Layers size={16} /> },
-    { n: 5, label: 'DDS Availability', icon: <Database size={16} /> },
-    { n: 6, label: 'Data Origination', icon: <GitBranch size={16} /> },
-    { n: 7, label: 'Gap Analysis', icon: <BarChart3 size={16} /> },
-    { n: 8, label: 'Handoff & Actions', icon: <ArrowRightLeft size={16} /> },
+    { n: 1, label: 'Business Needs', icon: <ClipboardList size={16} /> },
+    { n: 2, label: 'Requirements & FRIM', icon: <Sparkles size={16} /> },
+    { n: 3, label: 'BLDM Mapping', icon: <Layers size={16} /> },
+    { n: 4, label: 'Cross-Domain Sourcing', icon: <GitBranch size={16} /> },
+    { n: 5, label: 'PDM & DDS', icon: <Database size={16} /> },
+    { n: 6, label: 'Gap Analysis', icon: <BarChart3 size={16} /> },
+    { n: 7, label: 'DQ Monitoring', icon: <Shield size={16} /> },
+    { n: 8, label: 'Closing', icon: <CheckCircle2 size={16} /> },
   ];
 
   const persona = PERSONAS.find(p => p.id === selectedPersona);
@@ -823,6 +825,18 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
   const [raciValues, setRaciValues] = useState({ responsible: STEP_RACI[1].responsible, accountable: STEP_RACI[1].accountable, reviewer: STEP_RACI[1].reviewer });
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const fileInputRef = React.useRef(null);
+  const [intakeMode, setIntakeMode] = useState('requirement'); // 'requirement' or 'impact'
+  const [businessReqText, setBusinessReqText] = useState(BUSINESS_REQUIREMENTS_TEXT[selectedUC] || '');
+  const [dqReqText, setDqReqText] = useState(DQ_REQUIREMENTS_TEXT[selectedUC] || '');
+  const [impactSource, setImpactSource] = useState('');
+  const [impactSystems, setImpactSystems] = useState([]);
+
+  // Sync textareas when UC changes
+  useEffect(() => {
+    setBusinessReqText(BUSINESS_REQUIREMENTS_TEXT[selectedUC] || '');
+    setDqReqText(DQ_REQUIREMENTS_TEXT[selectedUC] || '');
+  }, [selectedUC]);
+
   const changePre = CHANGE_PRESELECTIONS[selectedUC] || CHANGE_PRESELECTIONS[1];
   const [selSaga, setSelSaga] = useState(changePre.saga);
   const [selEpisode, setSelEpisode] = useState(changePre.episode);
@@ -834,11 +848,110 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
 
   return (
     <div>
-      <SectionHeader sub="Register your data need. Select your grid (persona), use case, entity scope, and applicable regulatory and policy context." tip={STEP_TOOLTIPS[1].main}>
-        Step 1 — Use Case Registration
+      <SectionHeader sub="Define your business needs. Select your grid, use case, entity scope, regulatory context, and describe your data and quality requirements." tip={STEP_TOOLTIPS[1].main}>
+        Step 1 — Business Needs
       </SectionHeader>
       <OwnershipBar step={1} editable values={raciValues} onChange={setRaciValues} />
 
+      {/* Intake Mode Toggle */}
+      <div style={{ ...styles.card, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Intake Mode</span>
+        <div style={{ display: 'flex', borderRadius: 10, border: `1px solid ${COLORS.lightGrey}40`, overflow: 'hidden' }}>
+          {[{ key: 'requirement', label: 'New Data Requirement', icon: <ClipboardList size={14} /> }, { key: 'impact', label: 'New Source Data (Impact)', icon: <AlertTriangle size={14} /> }].map(m => (
+            <button key={m.key} onClick={() => setIntakeMode(m.key)} style={{
+              padding: '8px 18px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+              background: intakeMode === m.key ? COLORS.green : '#fff',
+              color: intakeMode === m.key ? '#fff' : COLORS.darkGreen,
+              display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s',
+            }}>{m.icon} {m.label}</button>
+          ))}
+        </div>
+        <InfoTooltip text="Choose 'New Data Requirement' for standard intake. Choose 'New Source Data (Impact)' to analyse what happens when a source system changes — shows which use cases, FRIM terms, and DDS products are affected." />
+      </div>
+
+      {intakeMode === 'impact' ? (
+        /* Impact Analysis Mode */
+        <div>
+          <div style={{ ...styles.card }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <AlertTriangle size={18} color={COLORS.yellow} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Impact Analysis — Source Data Change</span>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Describe the Source Data Change</label>
+              <textarea style={{ ...styles.input, minHeight: 100, resize: 'vertical', height: 'auto' }} placeholder="e.g. Core Banking System migration from CBS to SAP S/4HANA. Field mappings for credit facility data will change..." value={impactSource} onChange={e => setImpactSource(e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, color: COLORS.mediumGrey, fontWeight: 600, display: 'block', marginBottom: 6 }}>Affected Systems</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {IMPACT_ANALYSIS_DATA.systems.map(sys => {
+                  const sel = impactSystems.includes(sys);
+                  return (
+                    <div key={sys} onClick={() => setImpactSystems(prev => prev.includes(sys) ? prev.filter(s => s !== sys) : [...prev, sys])} style={{
+                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      border: sel ? `2px solid ${COLORS.green}` : `1px solid ${COLORS.lightGrey}40`,
+                      background: sel ? `${COLORS.green}08` : '#fff', color: sel ? COLORS.green : COLORS.darkGreen,
+                      transition: 'all 0.15s',
+                    }}>{sel && <Check size={10} style={{ marginRight: 4 }} />}{sys}</div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Impact Results */}
+          <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+            <KpiCard label="Use Cases Impacted" value={IMPACT_ANALYSIS_DATA.impactScenarios.reduce((s, sc) => s + sc.affectedUCs.length, 0)} color={COLORS.red} />
+            <KpiCard label="FRIM Terms Affected" value={IMPACT_ANALYSIS_DATA.impactScenarios.reduce((s, sc) => s + sc.affectedFrimTerms.length, 0)} color={COLORS.yellow} />
+            <KpiCard label="DDS Products to Update" value={IMPACT_ANALYSIS_DATA.impactScenarios.reduce((s, sc) => s + sc.affectedDDSProducts.length, 0)} color={COLORS.petrol} />
+          </div>
+
+          {IMPACT_ANALYSIS_DATA.impactScenarios.map(sc => (
+            <div key={sc.id} style={{ ...styles.card, borderLeft: `4px solid ${sc.severity === 'Critical' ? COLORS.red : sc.severity === 'High' ? COLORS.yellow : COLORS.petrol}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{sc.sourceChange}</div>
+                  <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4 }}>{sc.description}</div>
+                </div>
+                <span style={styles.badge(sc.severity === 'Critical' ? `${COLORS.red}15` : sc.severity === 'High' ? `${COLORS.yellow}20` : `${COLORS.petrol}15`, sc.severity === 'Critical' ? COLORS.red : sc.severity === 'High' ? '#92750a' : COLORS.petrol)}>
+                  {sc.severity} — {sc.timeline}
+                </span>
+              </div>
+              <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div style={{ background: `${COLORS.red}06`, borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.red, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Affected Use Cases ({sc.affectedUCs.length})</div>
+                  {sc.affectedUCs.map(ucId => {
+                    const ucItem = USE_CASE_LIST.find(u => u.id === ucId);
+                    return ucItem ? <div key={ucId} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0' }}>{ucItem.icon} {ucItem.label}</div> : null;
+                  })}
+                </div>
+                <div style={{ background: `${COLORS.yellow}08`, borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#92750a', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>FRIM Terms ({sc.affectedFrimTerms.length})</div>
+                  {sc.affectedFrimTerms.map(t => <div key={t} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0', ...styles.fontSerif, fontStyle: 'italic' }}>{t}</div>)}
+                </div>
+                <div style={{ background: `${COLORS.petrol}06`, borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.petrol, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>DDS Products ({sc.affectedDDSProducts.length})</div>
+                  {sc.affectedDDSProducts.map(p => <div key={p} style={{ fontSize: 12, color: COLORS.darkGreen, padding: '2px 0', ...styles.fontMono }}>{p}</div>)}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+            <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => {
+              const data = IMPACT_ANALYSIS_DATA.impactScenarios.map(sc => ({
+                'Source Change': sc.sourceChange, 'Severity': sc.severity, 'Timeline': sc.timeline,
+                'Affected UCs': sc.affectedUCs.length, 'FRIM Terms': sc.affectedFrimTerms.join(', '),
+                'DDS Products': sc.affectedDDSProducts.join(', '), 'Description': sc.description,
+              }));
+              exportToExcel(data, 'Impact Analysis', 'Impact_Analysis.xlsx');
+            }}>
+              <Download size={14} /> Export Impact Analysis
+            </button>
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Persona / Grid Selection */}
       <div style={{ ...styles.card }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
@@ -999,6 +1112,26 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
             <input style={styles.input} value={uc.target} readOnly />
           </div>
         </div>
+      </div>
+
+      {/* Business Requirements */}
+      <div style={{ ...styles.card }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <FileText size={18} color={COLORS.green} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Business Requirements</span>
+          <InfoTooltip text="Describe in free text what data you need and why. This feeds into Step 2 for AI-assisted requirement derivation." />
+        </div>
+        <textarea style={{ ...styles.input, minHeight: 120, resize: 'vertical', height: 'auto', lineHeight: 1.6 }} placeholder="Describe your data needs..." value={businessReqText} onChange={e => setBusinessReqText(e.target.value)} />
+      </div>
+
+      {/* DQ Requirements */}
+      <div style={{ ...styles.card }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <Shield size={18} color={COLORS.petrol} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>Data Quality Requirements</span>
+          <InfoTooltip text="Define your data quality expectations: completeness, accuracy, timeliness thresholds. These are monitored in Step 7 DQ Monitoring." />
+        </div>
+        <textarea style={{ ...styles.input, minHeight: 100, resize: 'vertical', height: 'auto', lineHeight: 1.6 }} placeholder="Specify DQ thresholds and rules..." value={dqReqText} onChange={e => setDqReqText(e.target.value)} />
       </div>
 
       {/* Change Initiative Hierarchy */}
@@ -1163,13 +1296,15 @@ function Step1({ selectedPersona, setSelectedPersona, selectedUC, setSelectedUC,
       <ReviewPanel step={1} />
 
       <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-        <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => exportToExcel([{ 'Use Case': uc.name, 'Driver': uc.driver, 'Frequency': uc.frequency, 'Priority': uc.priority, 'Deadline': uc.deadline, 'Target Report': uc.target, 'Entities': selectedEntities.join(', '), 'Regulations': selectedRegs.join(', ') }], 'UC Intake', `step1_intake.xlsx`)}>
+        <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => exportToExcel([{ 'Use Case': uc.name, 'Driver': uc.driver, 'Frequency': uc.frequency, 'Priority': uc.priority, 'Deadline': uc.deadline, 'Target Report': uc.target, 'Entities': selectedEntities.join(', '), 'Regulations': selectedRegs.join(', '), 'Business Requirements': businessReqText, 'DQ Requirements': dqReqText }], 'UC Intake', `step1_intake.xlsx`)}>
           <Download size={14} /> Export to Excel
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Register Use Case <ArrowRight size={16} />
+          Next: Requirements & FRIM <ArrowRight size={16} />
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -1312,7 +1447,7 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
   return (
     <div>
       <SectionHeader sub="Describe your data need in business terms or import existing requirements. AI will derive structured data requirements with definitions." tip={STEP_TOOLTIPS[2].main}>
-        Step 2 — Business Need & Data Requirements
+        Step 2 — Requirements & FRIM Mapping
       </SectionHeader>
       <OwnershipBar step={2} />
 
@@ -1624,9 +1759,11 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
             <button style={{ ...styles.btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
               <Download size={14} /> Export to Excel
             </button>
-            <button style={styles.btnPrimary} onClick={onNext}>
-              Proceed to FRIM Matching <ArrowRight size={16} />
-            </button>
+            {onNext && (
+              <button style={styles.btnPrimary} onClick={onNext}>
+                Proceed to FRIM Matching <ArrowRight size={16} />
+              </button>
+            )}
           </div>
         </>
       )}
@@ -1654,11 +1791,12 @@ function Step2BusinessNeed({ selectedUC, onNext }) {
 // ============================================================
 // Step 3 — Requirements & FRIM Matching (was Step 2)
 // ============================================================
-function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext }) {
+function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext, stepLabel }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const stats = useMemo(() => getStats(reqs), [reqs]);
   const expressions = ELEMENT_EXPRESSIONS[selectedUC] || [];
   const rationales = FRIM_MAPPING_RATIONALES[selectedUC] || {};
+  const defReasoning = DEFINITION_REASONING[selectedUC] || {};
   const [search, setSearch] = useState('');
   const [filterMatch, setFilterMatch] = useState('all');
   const [filterCde, setFilterCde] = useState('all');
@@ -1724,9 +1862,9 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[3]?.main || "Map business requirements to FRIM Lexicon terms."} tip={STEP_TOOLTIPS[3]?.frim || "Each data requirement is matched against the FRIM Lexicon. Green = exact match, Yellow = needs review, Red = new term needed."}>
-        Step 3 — FRIM Lexicon Mapping
+        {stepLabel ? `Step ${stepLabel}` : 'Step 2'} — FRIM Lexicon Mapping
       </SectionHeader>
-      <OwnershipBar step={3} />
+      <OwnershipBar step={2} />
 
       <div style={{ ...styles.badge(`${COLORS.petrol}15`, COLORS.petrol), marginBottom: 16, padding: '8px 16px', fontSize: 13 }}>
         🤖 AI-assisted — {stats.total} requirements mapped to FRIM terms
@@ -1912,6 +2050,23 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
                             <div style={{ fontSize: 12, color: COLORS.mediumGrey }}>Ref: {r.regRef}</div>
                           )}
                         </div>
+
+                        {/* Definition Reasoning — Policy & Regulation */}
+                        {defReasoning[r.id] && (
+                          <div style={{ background: `${COLORS.blue}04`, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.blue}15`, marginTop: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.blue, marginBottom: 12, ...styles.fontSans }}>🔍 Definition Reasoning</div>
+                            <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                              <div style={{ background: '#fff', borderRadius: 8, padding: 12, border: `1px solid ${COLORS.green}20` }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.green, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Policy Reference</div>
+                                <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.6 }}>{defReasoning[r.id].policy}</div>
+                              </div>
+                              <div style={{ background: '#fff', borderRadius: 8, padding: 12, border: `1px solid ${COLORS.blue}20` }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.blue, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Regulation Reference</div>
+                                <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.6 }}>{defReasoning[r.id].regulation}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}
@@ -1945,12 +2100,14 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
         <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleExport}>
           <Download size={14} /> Export FRIM Mapping
         </button>
-        <button style={styles.btnPrimary} onClick={onNext}>
-          Next: BLDM Mapping <ArrowRight size={16} />
-        </button>
+        {onNext && (
+          <button style={styles.btnPrimary} onClick={onNext}>
+            Next: BLDM Mapping <ArrowRight size={16} />
+          </button>
+        )}
       </div>
 
-      <ReviewPanel step={3} />
+      <ReviewPanel step={2} />
     </div>
   );
 }
@@ -1958,13 +2115,15 @@ function Step3FRIM({ selectedUC, birdEnabled, birdTransformationsEnabled, onNext
 // ============================================================
 // Step 5 — DDS Availability (reordered from Step 4)
 // ============================================================
-function Step4DDS({ selectedUC, selectedEntities, onNext }) {
+function Step4DDS({ selectedUC, selectedEntities, onNext, stepNum = 5 }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const ddsData = DDS_AVAILABILITY[selectedUC] || {};
   const activeEntities = LEGAL_ENTITIES.filter(le => selectedEntities.includes(le.id));
   const [expandedProduct, setExpandedProduct] = useState(null);
   const [expandedEntity, setExpandedEntity] = useState(null);
   const [kpiFilter, setKpiFilter] = useState(null);
+  const suggestedPdm = AI_SUGGESTED_PDM[selectedUC] || [];
+  const [acceptedPdm, setAcceptedPdm] = useState({});
 
   const totals = useMemo(() => {
     let avail = 0, partial = 0, unavail = 0;
@@ -2003,9 +2162,9 @@ function Step4DDS({ selectedUC, selectedEntities, onNext }) {
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[5]?.main || "Overview of data available in the DDS per legal entity."} tip={STEP_TOOLTIPS[5]?.dds || "Shows which data elements are already available in the DDS."}>
-        Step 5 — DDS Data Availability
+        Step {stepNum} — Physical Data Model & DDS Availability
       </SectionHeader>
-      <OwnershipBar step={5} />
+      <OwnershipBar step={stepNum} />
 
       {/* Clickable KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -2014,6 +2173,59 @@ function Step4DDS({ selectedUC, selectedEntities, onNext }) {
         <KpiCard label="Not in DDS" value={totals.unavail} color={COLORS.red} active={kpiFilter === 'unavail'} onClick={() => setKpiFilter(kpiFilter === 'unavail' ? null : 'unavail')} />
         <KpiCard label="DDS Coverage" value={`${totals.coverage}%`} color={COLORS.petrol} />
       </div>
+
+      {/* AI-Suggested Physical Data Model */}
+      {suggestedPdm.length > 0 && (
+        <div style={{ ...styles.card }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Sparkles size={18} color={COLORS.petrol} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>AI-Suggested Physical Data Model</span>
+              <InfoTooltip text="AI-generated PDM table structure based on your FRIM requirements. Review and accept or modify each suggestion." />
+            </div>
+            <span style={styles.badge(`${COLORS.petrol}15`, COLORS.petrol)}>
+              {Object.values(acceptedPdm).filter(Boolean).length}/{suggestedPdm.length} accepted
+            </span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Table</th>
+                  <th style={styles.th}>Column</th>
+                  <th style={styles.th}>Data Type</th>
+                  <th style={styles.th}>FRIM Term</th>
+                  <th style={styles.th}>Nullable</th>
+                  <th style={styles.th}>Description</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {suggestedPdm.map((row, i) => (
+                  <tr key={i} style={{ background: acceptedPdm[i] ? `${COLORS.green}06` : 'transparent', transition: 'background 0.15s' }}>
+                    <td style={{ ...styles.td, ...styles.fontMono, fontSize: 11, color: COLORS.petrol }}>{row.table}</td>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{row.column}</td>
+                    <td style={styles.td}><span style={styles.bldmBadge}>{row.dataType}</span></td>
+                    <td style={styles.td}><span style={styles.frimTerm}>{row.frimTerm}</span></td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>{row.nullable ? 'Yes' : 'No'}</td>
+                    <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{row.description}</td>
+                    <td style={styles.td}>
+                      {acceptedPdm[i] ? (
+                        <span style={styles.badge(`${COLORS.green}15`, COLORS.green)}><Check size={10} /> Accepted</span>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button style={{ ...styles.btnPrimary, padding: '4px 10px', fontSize: 11 }} onClick={() => setAcceptedPdm(prev => ({ ...prev, [i]: true }))}>Accept</button>
+                          <button style={{ ...styles.btnSecondary, padding: '4px 10px', fontSize: 11 }}>Modify</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Entity Availability Matrix — Expandable */}
       <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
@@ -2197,11 +2409,11 @@ function Step4DDS({ selectedUC, selectedEntities, onNext }) {
           <Download size={14} /> Export DDS Availability
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Data Origination <ArrowRight size={16} />
+          Next: Gap Analysis <ArrowRight size={16} />
         </button>
       </div>
 
-      <ReviewPanel step={5} />
+      <ReviewPanel step={stepNum} />
     </div>
   );
 }
@@ -2209,7 +2421,7 @@ function Step4DDS({ selectedUC, selectedEntities, onNext }) {
 // ============================================================
 // Step 4 — BLDM Mapping (reordered from Step 5)
 // ============================================================
-function Step5BLDM({ selectedUC, birdEnabled, onNext }) {
+function Step5BLDM({ selectedUC, birdEnabled, onNext, stepNum = 3 }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const [editingMapping, setEditingMapping] = useState(null);
   const [mappingOverrides, setMappingOverrides] = useState({});
@@ -2257,9 +2469,9 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext }) {
   return (
     <div>
       <SectionHeader sub={STEP_TOOLTIPS[4]?.main || "Map FRIM terms to F&R BLDM entities and attributes."} tip={STEP_TOOLTIPS[4]?.bldm || "Each requirement is mapped to the Business Logical Data Model (BLDM)."}>
-        Step 4 — F&R Business Logical Data Model Mapping
+        Step {stepNum} — F&R Business Logical Data Model Mapping
       </SectionHeader>
-      <OwnershipBar step={4} />
+      <OwnershipBar step={stepNum} />
 
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         <KpiCard label="Entities Affected" value={`${entitiesAffected}/8`} color={COLORS.green} />
@@ -2428,11 +2640,11 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext }) {
           <Download size={14} /> Export BLDM Mapping
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: DDS Availability <ArrowRight size={16} />
+          Next: Cross-Domain Sourcing <ArrowRight size={16} />
         </button>
       </div>
 
-      <ReviewPanel step={4} />
+      <ReviewPanel step={stepNum} />
     </div>
   );
 }
@@ -2440,7 +2652,7 @@ function Step5BLDM({ selectedUC, birdEnabled, onNext }) {
 // ============================================================
 // Step 6 — Data Origination (was Step 4)
 // ============================================================
-function Step6Origination({ selectedUC, onNext }) {
+function Step6Origination({ selectedUC, onNext, stepNum = 4 }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const [activeTab, setActiveTab] = useState('Credits');
   const mappings = SOURCE_MAPPINGS[selectedUC] || SOURCE_MAPPINGS[1];
@@ -2464,9 +2676,9 @@ function Step6Origination({ selectedUC, onNext }) {
   return (
     <div>
       <SectionHeader sub="Dual-BLDM mapping: source domain model → F&R data model. Where does each data element come from?" tip="This step traces each data requirement back to its source system. It maps the source domain attributes (Credits, Consumer, Markets) to the F&R data model, identifying exact matches, items needing review, and new sourcing routes.">
-        Step 6 — Data Origination & Cross-Domain Sourcing
+        Step {stepNum} — Data Origination & Cross-Domain Sourcing
       </SectionHeader>
-      <OwnershipBar step={6} />
+      <OwnershipBar step={stepNum} />
 
       <div style={{ ...styles.card }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 40, padding: '16px 0' }}>
@@ -2615,11 +2827,11 @@ function Step6Origination({ selectedUC, onNext }) {
           <Download size={14} /> Export Source Mapping
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Gap Analysis <ArrowRight size={16} />
+          Next: PDM & DDS <ArrowRight size={16} />
         </button>
       </div>
 
-      <ReviewPanel step={6} />
+      <ReviewPanel step={stepNum} />
     </div>
   );
 }
@@ -2627,7 +2839,7 @@ function Step6Origination({ selectedUC, onNext }) {
 // ============================================================
 // Step 7 — Gap Analysis (was Step 5)
 // ============================================================
-function Step7Gap({ selectedUC, birdEnabled, onNext }) {
+function Step7Gap({ selectedUC, birdEnabled, onNext, stepNum = 6 }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
   const stats = useMemo(() => getStats(reqs), [reqs]);
   const [kpiFilter, setKpiFilter] = useState(null);
@@ -2659,10 +2871,10 @@ function Step7Gap({ selectedUC, birdEnabled, onNext }) {
 
   return (
     <div>
-      <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Executive overview: what do we have, what's missing, and what needs to happen?"} tip={STEP_TOOLTIPS[7]?.gap || "Gap analysis dashboard showing coverage and effort required."}>
-        Step 7 — Gap Analysis & Data Availability
+      <SectionHeader sub={STEP_TOOLTIPS[6]?.main || "Executive overview: what do we have, what's missing, and what needs to happen?"} tip="Gap analysis dashboard showing coverage and effort required.">
+        Step {stepNum} — Gap Analysis & Data Availability
       </SectionHeader>
-      <OwnershipBar step={7} />
+      <OwnershipBar step={stepNum} />
 
       {/* Clickable KPI Cards */}
       <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: birdEnabled ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -2856,7 +3068,203 @@ function Step7Gap({ selectedUC, birdEnabled, onNext }) {
           <Download size={14} /> Export Gap Analysis
         </button>
         <button style={styles.btnPrimary} onClick={onNext}>
-          Next: Handoff & Actions <ArrowRight size={16} />
+          Next: DQ Monitoring <ArrowRight size={16} />
+        </button>
+      </div>
+
+      <ReviewPanel step={stepNum} />
+    </div>
+  );
+}
+
+// ============================================================
+// Step 7 — DQ Monitoring & AI Checks (NEW)
+// ============================================================
+function Step7DQMonitoring({ selectedUC, onNext }) {
+  const reqs = REQUIREMENTS[selectedUC] || [];
+  const dqActuals = DQ_ACTUALS[selectedUC] || DQ_ACTUALS[1] || [];
+  const dqIssues = DQ_AI_ISSUES[selectedUC] || DQ_AI_ISSUES[1] || [];
+
+  const passCount = dqActuals.filter(d => d.actual >= d.threshold).length;
+  const failCount = dqActuals.filter(d => d.actual < d.threshold).length;
+  const avgScore = dqActuals.length > 0 ? Math.round(dqActuals.reduce((s, d) => s + d.actual, 0) / dqActuals.length * 10) / 10 : 0;
+  const highIssues = dqIssues.filter(i => i.severity === 'High').length;
+
+  const chartData = dqActuals.map(d => ({ dimension: d.dimension, Threshold: d.threshold, Actual: d.actual }));
+  const pieData = [
+    { name: 'Pass', value: passCount, fill: COLORS.green },
+    { name: 'Fail', value: failCount, fill: COLORS.red },
+  ];
+
+  const severityColors = { High: COLORS.red, Medium: COLORS.yellow, Low: COLORS.petrol };
+
+  return (
+    <div>
+      <SectionHeader sub={STEP_TOOLTIPS[7]?.main || "Monitor data quality against thresholds."} tip={STEP_TOOLTIPS[7]?.dqTable || "DQ monitoring dashboard."}>
+        Step 7 — DQ Monitoring & AI Checks
+      </SectionHeader>
+      <OwnershipBar step={7} />
+
+      {/* KPI Cards */}
+      <div className="r-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        <KpiCard label="DQ Dimensions" value={dqActuals.length} color={COLORS.petrol} />
+        <KpiCard label="Passing" value={passCount} color={COLORS.green} />
+        <KpiCard label="Below Threshold" value={failCount} color={COLORS.red} />
+        <KpiCard label="AI Issues Detected" value={dqIssues.length} color={highIssues > 0 ? COLORS.red : COLORS.yellow} />
+      </div>
+
+      {/* DQ Requirements vs Actuals Table */}
+      <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${COLORS.lightGrey}18` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Requirements vs Actuals</div>
+          <div style={{ fontSize: 12, color: COLORS.mediumGrey, marginTop: 4 }}>Comparing thresholds from Step 1 against measured DQ values</div>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Dimension</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>Threshold</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>Actual</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>Trend</th>
+                <th style={styles.th}>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dqActuals.map((d, i) => {
+                const pass = d.actual >= d.threshold;
+                return (
+                  <tr key={i} style={{ transition: 'background 0.15s' }}>
+                    <td style={{ ...styles.td, fontWeight: 700 }}>{d.dimension}</td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>{d.threshold}{d.unit}</td>
+                    <td style={{ ...styles.td, textAlign: 'center', fontWeight: 700, color: pass ? COLORS.green : COLORS.red }}>{d.actual}{d.unit}</td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>
+                      <span style={styles.badge(pass ? `${COLORS.green}15` : `${COLORS.red}15`, pass ? COLORS.green : COLORS.red)}>
+                        {pass ? <><Check size={10} /> Pass</> : <><X size={10} /> Fail</>}
+                      </span>
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>
+                      <span style={{ fontSize: 12, color: d.trend === 'up' ? COLORS.green : d.trend === 'down' ? COLORS.red : COLORS.mediumGrey }}>
+                        {d.trend === 'up' ? '↑ Improving' : d.trend === 'down' ? '↓ Declining' : '→ Stable'}
+                      </span>
+                    </td>
+                    <td style={{ ...styles.td, fontSize: 12, color: COLORS.mediumGrey }}>{d.details}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* AI Issue Analysis */}
+      <div style={{ ...styles.card }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <Sparkles size={18} color={COLORS.petrol} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>AI-Detected DQ Issues</span>
+          <InfoTooltip text={STEP_TOOLTIPS[7]?.aiIssues || "AI-detected data quality issues."} />
+          <span style={styles.badge(highIssues > 0 ? `${COLORS.red}15` : `${COLORS.green}15`, highIssues > 0 ? COLORS.red : COLORS.green)}>
+            {highIssues > 0 ? `${highIssues} high severity` : 'No critical issues'}
+          </span>
+        </div>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+          {dqIssues.map(issue => (
+            <div key={issue.id} style={{ borderRadius: 12, border: `1px solid ${severityColors[issue.severity]}25`, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px', borderLeft: `4px solid ${severityColors[issue.severity]}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={styles.badge(`${severityColors[issue.severity]}15`, severityColors[issue.severity])}>{issue.severity}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>{issue.title}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: COLORS.darkGrey, lineHeight: 1.6, marginBottom: 10 }}>{issue.description}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+                    {issue.affected.map(a => <span key={a} style={{ ...styles.frimTerm, fontSize: 10, padding: '2px 8px' }}>{a}</span>)}
+                  </div>
+                  <div style={{ padding: 12, background: `${COLORS.green}06`, borderRadius: 8, border: `1px solid ${COLORS.green}15` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.green, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Suggested Remediation</div>
+                    <div style={{ fontSize: 12, color: COLORS.darkGrey, lineHeight: 1.5 }}>{issue.remediation}</div>
+                  </div>
+                </div>
+                <div style={{ marginLeft: 16, textAlign: 'right', fontSize: 11, color: COLORS.mediumGrey, whiteSpace: 'nowrap' }}>
+                  <div>Detected: {issue.detectedAt}</div>
+                  <div style={{ marginTop: 4 }}>{issue.trend}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* DQ Dashboard Charts */}
+      <div style={{ ...styles.card }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <BarChart3 size={18} color={COLORS.green} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, ...styles.fontSans }}>DQ Dashboard</span>
+          <InfoTooltip text={STEP_TOOLTIPS[7]?.dashboard || "Visual DQ dashboard."} />
+        </div>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+          {/* Bar Chart: Threshold vs Actual per dimension */}
+          <div style={{ background: `${COLORS.lightGrey}08`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>Threshold vs Actual by Dimension</div>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={`${COLORS.lightGrey}30`} />
+                <XAxis dataKey="dimension" fontSize={11} tick={{ fill: COLORS.darkGrey }} />
+                <YAxis fontSize={11} tick={{ fill: COLORS.darkGrey }} domain={[90, 100]} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Threshold" fill={`${COLORS.petrol}60`} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Actual" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.Actual >= entry.Threshold ? COLORS.green : COLORS.red} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Pie Chart: Pass/Fail distribution */}
+          <div style={{ background: `${COLORS.lightGrey}08`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 12, ...styles.fontSans }}>Pass/Fail Distribution</div>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ textAlign: 'center', marginTop: 8 }}>
+              <span style={{ fontSize: 24, fontWeight: 700, color: avgScore >= 98 ? COLORS.green : avgScore >= 95 ? COLORS.yellow : COLORS.red, ...styles.fontSerif }}>{avgScore}%</span>
+              <div style={{ fontSize: 11, color: COLORS.mediumGrey }}>Average DQ Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Export & Next buttons */}
+      <div className="r-btn-row" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+        <button style={{ ...styles.btnSecondary, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => {
+          const data = dqActuals.map(d => ({
+            'Dimension': d.dimension, 'Threshold': `${d.threshold}${d.unit}`, 'Actual': `${d.actual}${d.unit}`,
+            'Status': d.actual >= d.threshold ? 'Pass' : 'Fail', 'Trend': d.trend, 'Details': d.details,
+          }));
+          const issueData = dqIssues.map(i => ({
+            'Severity': i.severity, 'Issue': i.title, 'Description': i.description,
+            'Affected Elements': i.affected.join(', '), 'Remediation': i.remediation, 'Detected': i.detectedAt,
+          }));
+          const ws1 = XLSX.utils.json_to_sheet(data);
+          const ws2 = XLSX.utils.json_to_sheet(issueData);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws1, 'DQ Actuals');
+          XLSX.utils.book_append_sheet(wb, ws2, 'AI Issues');
+          XLSX.writeFile(wb, `DQ_Monitoring_UC${selectedUC}.xlsx`);
+        }}>
+          <Download size={14} /> Export DQ Report
+        </button>
+        <button style={styles.btnPrimary} onClick={onNext}>
+          Next: Closing <ArrowRight size={16} />
         </button>
       </div>
 
@@ -2866,7 +3274,140 @@ function Step7Gap({ selectedUC, birdEnabled, onNext }) {
 }
 
 // ============================================================
-// Step 8 — Handoff & Actions (was Step 6)
+// Step 8 — Closing (simplified from Handoff)
+// ============================================================
+function Step8Closing({ selectedUC }) {
+  const reqs = REQUIREMENTS[selectedUC] || [];
+  const stats = useMemo(() => getStats(reqs), [reqs]);
+  const ucInfo = USE_CASES[selectedUC] || {};
+  const ucLabel = USE_CASE_LIST.find(u => u.id === selectedUC)?.label || '';
+  const dqActuals = DQ_ACTUALS[selectedUC] || DQ_ACTUALS[1] || [];
+  const dqIssues = DQ_AI_ISSUES[selectedUC] || DQ_AI_ISSUES[1] || [];
+  const failCount = dqActuals.filter(d => d.actual < d.threshold).length;
+  const newBldmEntities = new Set(reqs.filter(r => r.match === 'new').map(r => r.entity)).size;
+
+  const processSteps = [
+    { label: 'Business Needs', done: true },
+    { label: 'Req & FRIM', done: true },
+    { label: 'BLDM', done: true },
+    { label: 'Sourcing', done: true },
+    { label: 'PDM & DDS', done: true },
+    { label: 'Gap Analysis', done: true },
+    { label: 'DQ Monitor', done: true },
+    { label: 'Closing', done: true },
+  ];
+
+  const findings = [
+    { icon: '📊', text: `${stats.total} data requirements identified for ${ucLabel}` },
+    { icon: '✅', text: `FRIM coverage: ${stats.coverage}% (${stats.exact} exact matches, ${stats.review} under review)` },
+    { icon: '🆕', text: `${stats.newR} new FRIM Lexicon terms needed` },
+    { icon: '🏗️', text: `${stats.newR} new BLDM attributes across ${newBldmEntities} entities` },
+    { icon: '⚠️', text: `${dqIssues.length} DQ issues detected (${dqIssues.filter(i => i.severity === 'High').length} high severity)` },
+    { icon: '📉', text: `${failCount} DQ dimensions below threshold` },
+    { icon: '🎯', text: `${stats.cdes} Critical Data Elements (CDEs) registered` },
+    { icon: '📦', text: `${new Set(reqs.map(r => r.domain)).size} source domains involved` },
+  ];
+
+  return (
+    <div>
+      <SectionHeader sub={STEP_TOOLTIPS[8]?.main || "Closing overview with key findings and exports."} tip="Final closing step with summary of all process findings.">
+        Step 8 — Closing
+      </SectionHeader>
+      <OwnershipBar step={8} />
+
+      {/* Process Status */}
+      <div style={{ ...styles.card }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Process Status</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', padding: '8px 0' }}>
+          {processSteps.map((s, i) => (
+            <React.Fragment key={i}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 70, gap: 6 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.green, color: '#fff' }}>
+                  <Check size={16} />
+                </div>
+                <div style={{ fontSize: 9, color: COLORS.green, textAlign: 'center', fontWeight: 600, ...styles.fontSans }}>{s.label}</div>
+              </div>
+              {i < processSteps.length - 1 && (
+                <div style={{ height: 2, flex: 1, minWidth: 12, background: COLORS.green, marginBottom: 20 }} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* Key Findings */}
+      <div style={{ ...styles.card, borderLeft: `4px solid ${COLORS.green}` }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Key Findings</div>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {findings.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: `${COLORS.lightGrey}08`, borderRadius: 10, fontSize: 13, color: COLORS.darkGreen, ...styles.fontSans }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{f.icon}</span>
+              <span>{f.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 5 Export Buttons */}
+      <div style={{ ...styles.card }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.darkGreen, marginBottom: 16, ...styles.fontSans }}>Export Packages</div>
+        <div className="r-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          <button style={{ ...styles.btnPrimary, justifyContent: 'center', padding: '14px 16px' }} onClick={() => {
+            exportToExcel([{
+              'Use Case': ucLabel, 'Driver': ucInfo.driver, 'Requirements': stats.total,
+              'FRIM Coverage': `${stats.coverage}%`, 'Exact Match': stats.exact, 'Review': stats.review,
+              'New Terms': stats.newR, 'CDEs': stats.cdes, 'Frequency': ucInfo.frequency,
+            }], 'Use Case Overview', `UC_Overview_${selectedUC}.xlsx`);
+          }}>
+            <Download size={14} /> Total Use Case Overview
+          </button>
+          <button style={{ ...styles.btnPrimary, justifyContent: 'center', padding: '14px 16px' }} onClick={() => {
+            exportToExcel(reqs.map(r => ({
+              'ID': r.id, 'FRIM Term': r.frim, 'Definition': r.def, 'Entity': r.entity,
+              'Attribute': r.attr, 'Match': r.match, 'CDE': r.cde ? 'Yes' : 'No', 'Domain': r.domain,
+            })), 'Requirements', `Requirements_UC${selectedUC}.xlsx`);
+          }}>
+            <Download size={14} /> Export Requirements
+          </button>
+          <button style={{ ...styles.btnPrimary, justifyContent: 'center', padding: '14px 16px' }} onClick={() => {
+            exportToExcel(reqs.filter(r => r.match === 'new').map(r => ({
+              'FRIM Term': r.frim, 'Definition': r.def, 'Entity': r.entity, 'Attribute': r.attr, 'CDE': r.cde ? 'Yes' : 'No',
+            })), 'FRIM Additions', `FRIM_Additions_UC${selectedUC}.xlsx`);
+          }}>
+            <Download size={14} /> Export FRIM Additions
+          </button>
+          <button style={{ ...styles.btnPrimary, justifyContent: 'center', padding: '14px 16px' }} onClick={() => {
+            exportToExcel(reqs.filter(r => r.match === 'new').map(r => ({
+              'Entity': r.entity, 'Attribute': r.attr, 'FRIM Term': r.frim, 'CDE': r.cde ? 'Yes' : 'No',
+            })), 'BLDM Additions', `BLDM_Additions_UC${selectedUC}.xlsx`);
+          }}>
+            <Download size={14} /> Export BLDM Additions
+          </button>
+          <button style={{ ...styles.btnPrimary, justifyContent: 'center', padding: '14px 16px' }} onClick={() => {
+            const ws1 = XLSX.utils.json_to_sheet(dqActuals.map(d => ({
+              'Dimension': d.dimension, 'Threshold': `${d.threshold}${d.unit}`, 'Actual': `${d.actual}${d.unit}`,
+              'Status': d.actual >= d.threshold ? 'Pass' : 'Fail', 'Trend': d.trend, 'Details': d.details,
+            })));
+            const ws2 = XLSX.utils.json_to_sheet(dqIssues.map(i => ({
+              'Severity': i.severity, 'Issue': i.title, 'Affected': i.affected.join(', '), 'Remediation': i.remediation,
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws1, 'DQ Findings');
+            XLSX.utils.book_append_sheet(wb, ws2, 'DQ Issues');
+            XLSX.writeFile(wb, `DQ_Findings_UC${selectedUC}.xlsx`);
+          }}>
+            <Download size={14} /> Export DQ Findings
+          </button>
+        </div>
+      </div>
+
+      <ReviewPanel step={8} />
+    </div>
+  );
+}
+
+// ============================================================
+// Step 8 — Handoff & Actions (LEGACY — kept for reference)
 // ============================================================
 function Step8Handoff({ selectedUC }) {
   const reqs = REQUIREMENTS[selectedUC] || [];
@@ -3098,7 +3639,7 @@ function Step8Handoff({ selectedUC }) {
 // ============================================================
 function PortfolioView({ setActiveStep, setSelectedUC }) {
   const statusColors = { 'In Progress': COLORS.yellow, 'Completed': COLORS.green, 'Not Started': COLORS.mediumGrey, 'Blocked': COLORS.red };
-  const stepLabels = ['Intake', 'Business Need', 'FRIM', 'BLDM', 'DDS', 'Origination', 'Gap', 'Handoff'];
+  const stepLabels = ['Business', 'Req & FRIM', 'BLDM', 'Sourcing', 'PDM&DDS', 'Gap', 'DQ', 'Closing'];
 
   const ucPortfolio = useMemo(() => {
     return USE_CASE_LIST.map(uc => {
@@ -3359,13 +3900,19 @@ export default function App() {
               selectedEntities={selectedEntities} setSelectedEntities={setSelectedEntities}
             />
           )}
-          {activeStep === 2 && <Step2BusinessNeed selectedUC={selectedUC} onNext={() => setActiveStep(3)} />}
-          {activeStep === 3 && <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(4)} />}
-          {activeStep === 4 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(5)} />}
-          {activeStep === 5 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(6)} />}
-          {activeStep === 6 && <Step6Origination selectedUC={selectedUC} onNext={() => setActiveStep(7)} />}
-          {activeStep === 7 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(8)} />}
-          {activeStep === 8 && <Step8Handoff selectedUC={selectedUC} />}
+          {activeStep === 2 && (
+            <div>
+              <Step2BusinessNeed selectedUC={selectedUC} onNext={null} />
+              <div style={{ marginTop: 24 }} />
+              <Step3FRIM selectedUC={selectedUC} birdEnabled={birdEnabled} birdTransformationsEnabled={birdTransformationsEnabled} onNext={() => setActiveStep(3)} stepLabel="2" />
+            </div>
+          )}
+          {activeStep === 3 && <Step5BLDM selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(4)} stepNum={3} />}
+          {activeStep === 4 && <Step6Origination selectedUC={selectedUC} onNext={() => setActiveStep(5)} stepNum={4} />}
+          {activeStep === 5 && <Step4DDS selectedUC={selectedUC} selectedEntities={selectedEntities} onNext={() => setActiveStep(6)} stepNum={5} />}
+          {activeStep === 6 && <Step7Gap selectedUC={selectedUC} birdEnabled={birdEnabled} onNext={() => setActiveStep(7)} stepNum={6} />}
+          {activeStep === 7 && <Step7DQMonitoring selectedUC={selectedUC} onNext={() => setActiveStep(8)} />}
+          {activeStep === 8 && <Step8Closing selectedUC={selectedUC} />}
         </div>
       </div>
     </div>

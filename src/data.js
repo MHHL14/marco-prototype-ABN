@@ -1210,9 +1210,14 @@ export const STEP_TOOLTIPS = {
     bldmToPdm: 'The Physical Data Model (PDM) maps BLDM logical entities to physical tables in Databricks Unity Catalog. This shows where each data element is stored.',
     dataProducts: 'DDS Data Products represent packaged, quality-assured data sets. Each product has an SLA, refresh frequency, and Databricks storage path.',
   },
-  6: { main: 'Trace each data requirement back to its source system and domain. Shows cross-domain data sourcing routes and SLA commitments from Credits, Consumer, and Markets domains.' },
-  7: { main: 'Executive gap analysis: what data do we have, what is missing, and what needs to happen. Includes CDE impact assessment, DQ readiness check, and Use Case Matrix showing cross-UC dependencies.' },
-  8: { main: 'Final handoff with structured actions: FRIM update summary, Data Products specification, action items per team, and export packages for Jira, PDF, and stakeholder notification.' },
+  6: { main: 'Executive gap analysis: what data do we have, what is missing, and what needs to happen. Includes CDE impact assessment, DQ readiness check, and Use Case Matrix showing cross-UC dependencies.' },
+  7: {
+    main: 'Monitor data quality against defined thresholds. AI-powered analysis detects anomalies, identifies root causes, and suggests remediation actions.',
+    dqTable: 'Comparison of DQ thresholds defined in Step 1 against actual measured values from the DDS. Red = below threshold, Green = meeting or exceeding.',
+    aiIssues: 'AI-detected data quality issues ranked by severity. Each issue includes affected data elements, root cause analysis, and suggested remediation.',
+    dashboard: 'Visual DQ dashboard showing scores per dimension and pass/fail distribution across all monitored data elements.',
+  },
+  8: { main: 'Closing overview with key findings from all process steps. Export complete packages for use case requirements, FRIM additions, BLDM additions, and DQ findings.' },
 };
 
 // --- Element Expressions (combined FRIM terms per UC) ---
@@ -1267,6 +1272,149 @@ export const PDM_MAPPING = [
   { bldmEntity: 'Credit Agreement', table: 'catalog.fr_dds.credit_agreement', schema: 'fr_dds', databricksPath: '/mnt/fr_dds/credit_agreement', refreshFreq: 'Daily T+1', rowCount: '~6M' },
   { bldmEntity: 'Interest Condition', table: 'catalog.fr_dds.interest_condition', schema: 'fr_dds', databricksPath: '/mnt/fr_dds/interest_condition', refreshFreq: 'Daily T+1', rowCount: '~10M' },
 ];
+
+// --- Business Requirements Text (pre-populated per UC for Step 1) ---
+export const BUSINESS_REQUIREMENTS_TEXT = {
+  1: 'We need to calculate risk-weighted exposure amounts for all credit facilities under the Standardised Approach (SA-CR) as part of CRR3/Basel IV. This includes exposure at default, credit conversion factors, risk weights per exposure class, and credit risk mitigation effects. Data must be available per legal entity and consolidated.',
+  2: 'IFRS9 ECL calculation requires probability of default (PD), loss given default (LGD), and exposure at default (EAD) parameters per facility. Stage classification (1/2/3) must be determined based on SICR triggers, and lifetime ECL must be computed for Stage 2/3 exposures.',
+  3: 'COREP reporting requires consolidated capital ratio calculations (CET1, T1, Total Capital) and risk exposure amounts across all risk types. Data must align with EBA ITS templates and be available at the reporting date.',
+  4: 'EBA Stress Test requires stressed PD, LGD, and EAD under baseline and adverse scenarios. Cumulative impact on CET1 ratio must be computed over the stress horizon. Historical data for backtesting model projections is needed.',
+  5: 'AnaCredit reporting requires granular credit data at instrument level, including outstanding amounts, interest rates, collateral values, and counterparty information. Data must meet ECB quality standards.',
+  6: 'ESG risk scoring needs environmental, social, and governance metrics per counterparty and portfolio. Carbon emission data, ESG ratings, and transition risk indicators must be integrated into the risk framework.',
+  7: 'PD model rebuild for mortgages requires historical default data, macroeconomic variables, loan-to-value ratios, borrower income data, and property valuation series. Minimum 10 years of observation history.',
+  8: 'FINREP reporting requires P&L, balance sheet, and off-balance sheet data per IFRS classification. Data must align with EBA ITS templates F01-F46 and be available at quarterly frequency.',
+  9: 'FRTB SA capital calculation requires position-level sensitivities (delta, vega, curvature) per risk class (GIRR, CSR, Equity, Commodity, FX). Market data feeds must support daily sensitivity computation.',
+  10: 'Operational Risk SMA calculation requires the Business Indicator components (ILDC, SC, FC) and 10-year loss history. Internal loss data must be reconciled with P&L and meet data quality thresholds.',
+};
+
+// --- DQ Requirements Text (pre-populated per UC for Step 1) ---
+export const DQ_REQUIREMENTS_TEXT = {
+  1: 'Completeness ≥ 99.5% for all CDE fields. Accuracy of risk weights must match regulatory tables exactly. Timeliness: data available by T+1 07:00 CET. Consistency across legal entities for consolidated reporting. Validity: all exposure values must be non-negative.',
+  2: 'Completeness ≥ 99% for PD/LGD/EAD parameters. Accuracy: PD values between 0 and 1, LGD between 0 and 1. Timeliness: monthly refresh for performing, daily for Stage 3. Consistency: ECL totals must reconcile with GL provisions.',
+  3: 'Completeness ≥ 99.5% for all COREP template fields. Accuracy: capital ratios must match audited figures. Timeliness: available within T+15 of reporting date. Consistency: consolidated figures must equal sum of solo entities plus adjustments.',
+  4: 'Completeness ≥ 98% for stress test input parameters. Accuracy: historical data validated against audited accounts. Timeliness: scenario data available T+5 from ECB publication. Consistency: baseline scenario must reconcile with COREP.',
+  5: 'Completeness ≥ 99.9% for mandatory AnaCredit fields. Accuracy: counterparty identifiers must match ECB reference data. Timeliness: monthly submission by T+30. Consistency: instrument totals must reconcile with COREP large exposures.',
+  6: 'Completeness ≥ 90% for ESG scores (external coverage varies). Accuracy: ESG ratings cross-validated across 2+ providers. Timeliness: quarterly refresh minimum. Validity: carbon emission values must be positive.',
+  7: 'Completeness ≥ 95% for model development sample. Accuracy: default flags validated against workout records. Timeliness: monthly snapshots over 10-year window. Consistency: loan amounts must match source systems.',
+  8: 'Completeness ≥ 99.5% for FINREP template fields. Accuracy: P&L figures reconciled with GL. Timeliness: quarterly by T+20. Consistency: balance sheet items must balance (A = L + E).',
+  9: 'Completeness ≥ 99% for position-level data. Accuracy: sensitivities validated against front-office systems. Timeliness: daily by T+1 08:00 CET. Consistency: portfolio totals must match risk aggregation.',
+  10: 'Completeness ≥ 95% for loss event data. Accuracy: loss amounts reconciled with GL entries. Timeliness: quarterly BI computation, monthly loss capture. Consistency: BI components must reconcile with FINREP P&L.',
+};
+
+// --- Definition Reasoning (policy/regulation references per FRIM mapping) ---
+export const DEFINITION_REASONING = {
+  1: {
+    1: { policy: 'F&R Data Policy §3.2.1 — All exposure values must use the gross carrying amount before provisions.', regulation: 'CRR2 Art. 111(1) — The exposure value of an asset item shall be its accounting value remaining after specific credit risk adjustments.' },
+    2: { policy: 'F&R Data Policy §3.2.3 — EAD must incorporate CCF for off-balance sheet items.', regulation: 'CRR2 Art. 166(8) — The exposure value for off-balance sheet items shall be multiplied by the applicable CCF.' },
+    3: { policy: 'F&R FRIM Governance §4.1 — CCF definitions must align with regulatory prescribed values.', regulation: 'CRR2 Art. 111(1)(d) — Credit conversion factors for off-balance sheet items listed in Annex I.' },
+    9: { policy: 'F&R Data Policy §3.3.1 — Risk weights must be sourced from the applicable regulatory framework.', regulation: 'CRR2 Art. 114-134 — Risk weights under the Standardised Approach for credit risk.' },
+    13: { policy: 'F&R FRIM Governance §4.3 — Maturity adjustments apply only to IRB exposures.', regulation: 'CRR2 Art. 162 — Maturity adjustment factor M for IRB exposures based on effective maturity.' },
+  },
+  2: {
+    1: { policy: 'F&R Data Policy §5.1 — PD parameters must be point-in-time for IFRS9 and through-the-cycle for regulatory capital.', regulation: 'IFRS9 Appendix A — Probability of default: the likelihood of a default occurring over a specified time period.' },
+    2: { policy: 'F&R Data Policy §5.2 — LGD must reflect economic downturn conditions for regulatory use.', regulation: 'IFRS9 B5.5.28 — LGD for ECL must reflect recovery expectations considering forward-looking scenarios.' },
+    3: { policy: 'F&R Data Policy §5.3 — EAD includes committed undrawn amounts with modelled CCFs.', regulation: 'IFRS9 5.5.20 — Maximum period over which ECL is measured is the contractual period including extension options.' },
+    7: { policy: 'F&R Data Policy §5.4 — SICR assessment must follow the approved staging criteria.', regulation: 'IFRS9 5.5.9 — Stage classification based on significant increase in credit risk since initial recognition.' },
+  },
+  3: {
+    1: { policy: 'F&R Data Policy §2.1 — CET1 components follow the approved capital definition.', regulation: 'CRR2 Art. 26 — Common Equity Tier 1 items include paid-up capital, share premium, and retained earnings.' },
+    3: { policy: 'F&R Data Policy §2.3 — Total risk exposure must aggregate all risk types.', regulation: 'CRR2 Art. 92(3) — Total risk exposure amount is the sum of credit, market, operational, and CVA risk.' },
+  },
+};
+
+// --- AI-Suggested Physical Data Model (per UC) ---
+export const AI_SUGGESTED_PDM = {
+  1: [
+    { table: 'fr_pdm.sa_cr_exposure', column: 'exposure_id', dataType: 'STRING', frimTerm: 'Facility Identifier', nullable: false, description: 'Unique identifier for the credit exposure' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'original_exposure_amt', dataType: 'DECIMAL(18,2)', frimTerm: 'Original Exposure Amount', nullable: false, description: 'Gross exposure before CCF and CRM' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'exposure_at_default', dataType: 'DECIMAL(18,2)', frimTerm: 'Exposure at Default', nullable: false, description: 'EAD after CCF application' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'credit_conv_factor', dataType: 'DECIMAL(5,4)', frimTerm: 'Credit Conversion Factor', nullable: true, description: 'CCF for off-balance sheet items' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'risk_weight_pct', dataType: 'DECIMAL(5,4)', frimTerm: 'Risk Weight Percentage', nullable: false, description: 'SA-CR risk weight per exposure class' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'rwe_amount', dataType: 'DECIMAL(18,2)', frimTerm: 'Risk-Weighted Exposure Amount', nullable: false, description: 'RWE = EAD × Risk Weight' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'exposure_class', dataType: 'STRING', frimTerm: 'Exposure Class', nullable: false, description: 'CRR2 exposure class classification' },
+    { table: 'fr_pdm.sa_cr_exposure', column: 'reporting_date', dataType: 'DATE', frimTerm: 'Reporting Date', nullable: false, description: 'Reporting reference date' },
+    { table: 'fr_pdm.sa_cr_collateral', column: 'collateral_id', dataType: 'STRING', frimTerm: 'Collateral Identifier', nullable: false, description: 'Unique collateral reference' },
+    { table: 'fr_pdm.sa_cr_collateral', column: 'eligible_value', dataType: 'DECIMAL(18,2)', frimTerm: 'Eligible Collateral Value', nullable: false, description: 'Post-haircut collateral value' },
+  ],
+  2: [
+    { table: 'fr_pdm.ecl_parameters', column: 'facility_id', dataType: 'STRING', frimTerm: 'Facility Identifier', nullable: false, description: 'Credit facility identifier' },
+    { table: 'fr_pdm.ecl_parameters', column: 'prob_default_12m', dataType: 'DECIMAL(8,6)', frimTerm: 'Twelve-Month PD', nullable: false, description: '12-month probability of default' },
+    { table: 'fr_pdm.ecl_parameters', column: 'prob_default_lifetime', dataType: 'DECIMAL(8,6)', frimTerm: 'Lifetime PD', nullable: false, description: 'Lifetime probability of default' },
+    { table: 'fr_pdm.ecl_parameters', column: 'loss_given_default', dataType: 'DECIMAL(5,4)', frimTerm: 'Loss Given Default', nullable: false, description: 'LGD parameter' },
+    { table: 'fr_pdm.ecl_parameters', column: 'ifrs9_stage', dataType: 'INTEGER', frimTerm: 'IFRS9 Stage Classification', nullable: false, description: 'Stage 1, 2, or 3' },
+    { table: 'fr_pdm.ecl_parameters', column: 'ecl_amount', dataType: 'DECIMAL(18,2)', frimTerm: 'Expected Credit Loss Amount', nullable: false, description: 'Calculated ECL provision' },
+    { table: 'fr_pdm.ecl_parameters', column: 'discount_factor', dataType: 'DECIMAL(8,6)', frimTerm: 'Discount Factor', nullable: false, description: 'EIR-based discount factor' },
+  ],
+};
+
+// --- DQ Actuals (mock measured DQ values per UC) ---
+export const DQ_ACTUALS = {
+  1: [
+    { dimension: 'Completeness', threshold: 99.5, actual: 99.2, unit: '%', trend: 'stable', details: '0.3% missing values in collateral_market_value across NL entity' },
+    { dimension: 'Accuracy', threshold: 99.0, actual: 99.8, unit: '%', trend: 'up', details: 'Risk weight validation against CRR2 tables: 99.8% accurate' },
+    { dimension: 'Timeliness', threshold: 100, actual: 95.0, unit: '%', trend: 'down', details: '5% of T+1 deliveries delayed to T+2 in Dec/Jan period' },
+    { dimension: 'Consistency', threshold: 98.0, actual: 97.5, unit: '%', trend: 'stable', details: 'Minor reconciliation gaps between NL and DE entities in consolidation' },
+    { dimension: 'Validity', threshold: 99.0, actual: 99.9, unit: '%', trend: 'up', details: 'All exposure values validated as non-negative' },
+  ],
+  2: [
+    { dimension: 'Completeness', threshold: 99.0, actual: 98.5, unit: '%', trend: 'down', details: 'PD parameters missing for 1.5% of newly originated facilities' },
+    { dimension: 'Accuracy', threshold: 99.0, actual: 99.1, unit: '%', trend: 'stable', details: 'PD/LGD values within acceptable model validation bounds' },
+    { dimension: 'Timeliness', threshold: 100, actual: 98.0, unit: '%', trend: 'stable', details: '2% of monthly Stage reclassifications delayed by 1 business day' },
+    { dimension: 'Consistency', threshold: 98.0, actual: 96.8, unit: '%', trend: 'down', details: 'ECL total vs GL provision gap of 3.2% in Q4' },
+    { dimension: 'Validity', threshold: 99.0, actual: 99.5, unit: '%', trend: 'up', details: 'PD range [0,1] and LGD range [0,1] enforced correctly' },
+  ],
+};
+
+// --- DQ AI Issues (AI-detected data quality issues per UC) ---
+export const DQ_AI_ISSUES = {
+  1: [
+    { id: 1, severity: 'High', title: 'Collateral Value Completeness Below Threshold', affected: ['Eligible Collateral Value', 'Collateral Market Value'], description: 'Collateral values are missing for 0.8% of CDE records in NL entity. This impacts CRM calculations and may lead to overstated RWE.', remediation: 'Implement automated validation at source system ingestion. Flag missing collateral records in daily DQ dashboard.', detectedAt: '2025-12-15', trend: 'Worsening since Nov 2025' },
+    { id: 2, severity: 'Medium', title: 'T+1 Delivery SLA Breach Pattern', affected: ['Reporting Date', 'All DDS tables'], description: 'Systematic T+2 delays observed during month-end periods (last 3 months). Root cause: batch job contention in source system.', remediation: 'Reschedule batch processing window or add parallel processing capacity for month-end peak.', detectedAt: '2025-11-28', trend: 'Recurring monthly' },
+    { id: 3, severity: 'Low', title: 'Exposure Class Consistency Check', affected: ['Exposure Class', 'Risk Weight Percentage'], description: 'Minor inconsistencies detected in exposure class mapping for 12 facilities between solo and consolidated views.', remediation: 'Review mapping rules in consolidation layer. Expected to self-resolve after next quarterly review.', detectedAt: '2026-01-05', trend: 'Stable' },
+  ],
+  2: [
+    { id: 1, severity: 'High', title: 'PD Gap for New Originations', affected: ['Twelve-Month PD', 'Lifetime PD'], description: 'Newly originated facilities (< 30 days) lack PD calibration. Temporary proxy PDs applied but not validated.', remediation: 'Implement real-time PD assignment pipeline at origination. Add validation rule for proxy PD expiry.', detectedAt: '2025-12-01', trend: 'Improving (was 3% in Q3)' },
+    { id: 2, severity: 'High', title: 'ECL-GL Reconciliation Gap', affected: ['Expected Credit Loss Amount', 'Impairment Allowance Amount'], description: 'ECL model output differs from GL provisions by 3.2% in Q4. Timing differences and model updates not fully propagated.', remediation: 'Implement automated ECL-GL reconciliation with root cause attribution. Target <1% variance.', detectedAt: '2026-01-10', trend: 'New issue' },
+    { id: 3, severity: 'Medium', title: 'Stage Classification Timeliness', affected: ['IFRS9 Stage Classification', 'SICR Flag'], description: 'Stage reclassifications delayed by 1 day for 2% of portfolio during month-end processing.', remediation: 'Optimize SICR trigger evaluation batch job. Consider intra-day processing for material exposures.', detectedAt: '2025-11-15', trend: 'Stable' },
+  ],
+};
+
+// --- Impact Analysis Data (mock data for reverse intake mode) ---
+export const IMPACT_ANALYSIS_DATA = {
+  impactScenarios: [
+    {
+      id: 1,
+      sourceChange: 'Core Banking System Migration (CBS → SAP S/4HANA)',
+      affectedUCs: [1, 2, 3, 5, 7, 8],
+      affectedFrimTerms: ['Original Exposure Amount', 'Facility Identifier', 'Product Type', 'Outstanding Nominal Amount', 'Interest Rate'],
+      affectedDDSProducts: ['credit_facility', 'financing_product', 'credit_agreement', 'interest_condition'],
+      severity: 'Critical',
+      timeline: 'Q3 2026',
+      description: 'Migration from legacy CBS to SAP S/4HANA will change source field mappings for 60% of credit data attributes.',
+    },
+    {
+      id: 2,
+      sourceChange: 'Market Data Feed Provider Switch (Reuters → Bloomberg)',
+      affectedUCs: [9],
+      affectedFrimTerms: ['Delta Sensitivity', 'Vega Sensitivity', 'Curvature Sensitivity', 'Fair Value Amount'],
+      affectedDDSProducts: ['financial_instrument'],
+      severity: 'High',
+      timeline: 'Q2 2026',
+      description: 'Switching market data provider requires re-mapping of instrument identifiers and sensitivity calculation inputs.',
+    },
+    {
+      id: 3,
+      sourceChange: 'ESG Data Provider Addition (MSCI ESG Integration)',
+      affectedUCs: [6],
+      affectedFrimTerms: ['ESG Risk Score', 'Carbon Emission Intensity'],
+      affectedDDSProducts: ['involved_party'],
+      severity: 'Medium',
+      timeline: 'Q1 2026',
+      description: 'Adding MSCI as secondary ESG data source. Requires reconciliation framework for conflicting ratings.',
+    },
+  ],
+  systems: ['Core Banking (CBS)', 'Risk Engine (Moody\'s)', 'Market Data (Reuters/Bloomberg)', 'Collateral Mgmt (ACBS)', 'GL (SAP)', 'Data Warehouse (Teradata)', 'Databricks Unity Catalog'],
+};
 
 // Helper to get stats
 export function getStats(reqs) {
