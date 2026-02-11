@@ -28,8 +28,8 @@ const styles = {
   frimTerm: { fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', color: COLORS.darkGreen, borderLeft: `3px solid ${COLORS.green}`, paddingLeft: 8 },
   bldmBadge: { fontFamily: 'ui-monospace, monospace', fontSize: 12, background: 'rgba(168,190,181,0.2)', padding: '2px 8px', borderRadius: 4, color: COLORS.darkGrey },
   birdBadge: { fontFamily: 'ui-monospace, monospace', fontSize: 11, background: 'rgba(0,96,128,0.1)', padding: '2px 8px', borderRadius: 4, color: COLORS.petrol, border: `1px solid ${COLORS.petrol}30` },
-  card: { background: '#fff', borderRadius: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', padding: 28, marginBottom: 16, transition: 'box-shadow 0.2s, transform 0.2s' },
-  cardSmall: { background: '#fff', borderRadius: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', padding: 18, marginBottom: 12, transition: 'box-shadow 0.2s, transform 0.2s' },
+  card: { background: '#fff', borderRadius: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', padding: 'clamp(14px, 3vw, 28px)', marginBottom: 16, transition: 'box-shadow 0.2s, transform 0.2s', boxSizing: 'border-box' },
+  cardSmall: { background: '#fff', borderRadius: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', padding: 'clamp(12px, 2.5vw, 18px)', marginBottom: 12, transition: 'box-shadow 0.2s, transform 0.2s', boxSizing: 'border-box' },
   btnPrimary: { background: `linear-gradient(135deg, ${COLORS.green}, #00a876)`, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,144,103,0.25)' },
   btnSecondary: { background: '#fff', color: COLORS.darkGreen, border: `1px solid ${COLORS.lightGrey}`, borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all 0.15s' },
   input: { border: `1px solid ${COLORS.lightGrey}80`, borderRadius: 8, padding: '10px 14px', fontSize: 14, width: '100%', outline: 'none', fontFamily: 'system-ui, sans-serif', color: COLORS.darkGreen, height: 40, boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' },
@@ -165,12 +165,12 @@ function StatusDot({ status }) {
 
 function SectionHeader({ children, sub, tip }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <h2 style={{ ...styles.fontSerif, fontSize: 22, fontWeight: 700, color: COLORS.darkGreen, margin: 0 }}>{children}</h2>
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <h2 style={{ ...styles.fontSerif, fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 700, color: COLORS.darkGreen, margin: 0, lineHeight: 1.3 }}>{children}</h2>
         {tip && <InfoTooltip text={tip} />}
       </div>
-      {sub && <p style={{ ...styles.fontSans, fontSize: 15, color: COLORS.darkGrey, marginTop: 6, lineHeight: 1.6 }}>{sub}</p>}
+      {sub && <p style={{ ...styles.fontSans, fontSize: 'clamp(13px, 3.5vw, 15px)', color: COLORS.darkGrey, marginTop: 6, lineHeight: 1.6 }}>{sub}</p>}
     </div>
   );
 }
@@ -368,7 +368,7 @@ function OwnershipBar({ step, editable, values, onChange }) {
     { key: 'reviewer', label: 'Reviewer', icon: <Eye size={12} />, bg: `${COLORS.yellow}08` },
   ];
   return (
-    <div className="r-flex-col" style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}30`, fontSize: 12, ...styles.fontSans }}>
+    <div className="r-flex-col" style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: `1px solid ${COLORS.lightGrey}30`, fontSize: 12, boxSizing: 'border-box', maxWidth: '100%', ...styles.fontSans }}>
       {roles.map((r, i) => (
         <div key={r.key} style={{ flex: 1, padding: '10px 16px', background: r.bg, borderRight: i < 2 ? `1px solid ${COLORS.lightGrey}20` : 'none' }}>
           <div style={{ color: COLORS.mediumGrey, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>{r.label}</div>
@@ -794,18 +794,18 @@ function Sidebar({ activeStep, setActiveStep, selectedPersona, setSelectedPerson
 // ============================================================
 function TopBar({ personaLabel, ucLabel, isMobile, onMenuToggle }) {
   return (
-    <div style={{ background: '#fff', borderBottom: `1px solid ${COLORS.lightGrey}20`, padding: isMobile ? '10px 12px' : '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...styles.fontSans, boxShadow: '0 1px 4px rgba(0,0,0,0.03)', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div style={{ background: '#fff', borderBottom: `1px solid ${COLORS.lightGrey}20`, padding: isMobile ? '10px 14px' : '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...styles.fontSans, boxShadow: '0 1px 4px rgba(0,0,0,0.03)', gap: 8, position: 'sticky', top: 0, zIndex: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         {isMobile && (
-          <button onClick={onMenuToggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={COLORS.darkGreen} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <button onClick={onMenuToggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex', flexShrink: 0, marginLeft: -4 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={COLORS.darkGreen} strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
         )}
-        <h1 style={{ ...styles.fontSerif, fontSize: isMobile ? 14 : 18, color: COLORS.darkGreen, margin: 0, fontWeight: 700, whiteSpace: 'nowrap' }}>{isMobile ? 'F&R Intelligence' : 'F&R Data Requirements Intelligence'}</h1>
+        <h1 style={{ ...styles.fontSerif, fontSize: isMobile ? 15 : 18, color: COLORS.darkGreen, margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? 'F&R Intelligence' : 'F&R Data Requirements Intelligence'}</h1>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, fontSize: isMobile ? 11 : 13, color: COLORS.darkGrey, flexShrink: 0 }}>
-        <User size={isMobile ? 14 : 16} color={COLORS.mediumGrey} />
-        <span style={{ fontWeight: 600 }}>{personaLabel}</span>
+        {!isMobile && <User size={16} color={COLORS.mediumGrey} />}
+        <span style={{ fontWeight: 600 }}>{isMobile ? '' : personaLabel}</span>
         {!isMobile && ucLabel && <><span style={{ color: COLORS.lightGrey }}>›</span><span>{ucLabel}</span></>}
       </div>
     </div>
